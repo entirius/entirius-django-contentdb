@@ -1,0 +1,8 @@
+from django_contentdb.serializers.fields.author_brief import AuthorBriefField, CoAuthorBriefField
+from django_contentdb.serializers.fields.category import CategoryField
+from django_contentdb.serializers.fields.content_set import ContentSetField
+from django_contentdb.serializers.fields.createable_slug_related import CreateableSlugRelatedField
+from django_contentdb.serializers.fields.draft_content_set_members import DraftContentSetMembersField
+from django_contentdb.serializers.fields.extended_base64_image import ExtendedBase64ImageField
+from django_contentdb.serializers.fields.language import LanguageField
+from django_contentdb.serializers.fields.published_content_set_members import PublishedContentSetMembersField

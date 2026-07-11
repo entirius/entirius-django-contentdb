@@ -1,0 +1,47 @@
+app_label: django_contentdb
+groups:
+  - name: content-pipeline
+    title: "Content Pipeline"
+    models:
+      - Content
+      - ContentType
+      - Draft
+      - Published
+      - Route
+      - Language
+      - AccessRights
+      - ContentChannel
+      - Category
+      - ContentSet
+      - DraftToContentSet
+      - Deleted
+
+  - name: attributes
+    title: "Attributes"
+    models:
+      - Attribute
+      - AttributeSet
+      - AttributeToSet
+      - AttributeValue
+      - ContentAttribute
+
+  - name: media
+    title: "Media"
+    models:
+      - Image
+      - ImageTag
+      - ImageToTag
+      - Thumbnail
+
+  - name: authoring
+    title: "Authoring"
+    models:
+      - Author
+      - DraftAuthor
+      - DraftCoAuthor
+
+  - name: permissions-audit
+    title: "Permissions & Audit"
+    models:
+      - ContentTypePermission
+      - ActivityLog

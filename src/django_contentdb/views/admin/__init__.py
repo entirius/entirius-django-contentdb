@@ -1,0 +1,15 @@
+from django_contentdb.views.admin.attribute import AttributeViewSet
+from django_contentdb.views.admin.attribute_set import AttributeSetViewSet
+from django_contentdb.views.admin.attribute_value import AttributeValueViewSet
+from django_contentdb.views.admin.categories import CategoryViewSet
+from django_contentdb.views.admin.content_channel import ContentChannelViewSet
+from django_contentdb.views.admin.content_set import ContentSetViewSet, LayoutSetViewSet
+from django_contentdb.views.admin.content_type import ContentTypeViewSet, LayoutTypeViewSet
+from django_contentdb.views.admin.draft import DraftViewSet, LayoutViewSet
+from django_contentdb.views.admin.image import ImageViewSet
+from django_contentdb.views.admin.image_tag import ImageTagViewSet
+from django_contentdb.views.admin.language import LanguageViewSet
+from django_contentdb.views.admin.published import LayoutPublishedViewSet, PublishedViewSet
+from django_contentdb.views.admin.route import RouteViewSet
+from django_contentdb.views.admin.view_content_permissions import view_content_permissions
+from django_contentdb.views.admin.view_layout_permissions import view_layout_permissions
