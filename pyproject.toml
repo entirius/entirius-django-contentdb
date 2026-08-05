@@ -1,6 +1,6 @@
 [project]
 name = "entirius-django-contentdb"
-version = "5.0.0"
+version = "5.0.1"
 description = "ContentDB Django module for Volkanos"
 authors = [{ name = "Entirius" }]
 readme = "README.md"
