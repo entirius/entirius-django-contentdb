@@ -3,10 +3,10 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from django.db.models import Q
-from django_filters import BooleanFilter, CharFilter, ModelChoiceFilter, ModelMultipleChoiceFilter
+from django_filters import BooleanFilter, CharFilter, ModelMultipleChoiceFilter
 
 from django_contentdb.filters import ContentFilter
-from django_contentdb.models import AccessRights, Language, Route
+from django_contentdb.models import AccessRights, Route
 
 
 class DraftFilter(ContentFilter):
@@ -22,9 +22,7 @@ class DraftFilter(ContentFilter):
             field_name="draft__routes__url", to_field_name="url", queryset=Route.objects.all()
         )
 
-        language_filter = ModelChoiceFilter(
-            field_name="draft__language__iso2", to_field_name="iso2", queryset=Language.objects.all()
-        )
+        language_filter = CharFilter(method=self._filter_by_language)
 
         channel_filter = CharFilter(method=self.filter_channel)
 
@@ -41,6 +39,10 @@ class DraftFilter(ContentFilter):
                 "name": CharFilter(method=self.filter_name),
             }
         )
+
+    @staticmethod
+    def _filter_by_language(queryset, name, value):
+        return queryset.filter(draft__language__iso2__iexact=value)
 
     def filter_exclude_in_content_set(self, queryset, name, value):
         if value:
