@@ -195,7 +195,7 @@ All 13 tile types. Each locked to specific parent sections via variant matching.
 
 **Tile props:** `dye` (1-5), `tile_align` (left/right), `images_set` (desktop/mobile), `custom_buttons` (label/url/type array), `custom_field` (url-key), various group-fields.
 
-See [Rich Content Building](/cynthia/cms/rich-content-building/) for complete config options, dye system, and patterns.
+See [Rich Content Building](https://github.com/entirius/entirius-pwa-cms/blob/develop/docs/rich-content-building.md) for complete config options, dye system, and patterns.
 
 ### Blog Extension
 
