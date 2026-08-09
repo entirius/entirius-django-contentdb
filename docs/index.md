@@ -58,6 +58,6 @@ Content flows from CMS editor to Django backend to storefront. The CMS creates/e
 ## Next Steps
 
 - [Data model and JSON structure](/volkanos/modules/contentdb/data-model/)
-- [Rich content building](/cynthia/cms/rich-content-building/) — sections, tiles, dyes, configs, and patterns
+- [Rich content building](https://github.com/entirius/entirius-pwa-cms/blob/develop/docs/rich-content-building.md) — sections, tiles, dyes, configs, and patterns
 - [API reference](/volkanos/modules/contentdb/api/)
 - [CMS configuration](/volkanos/modules/contentdb/cms-config/)

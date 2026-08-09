@@ -144,4 +144,4 @@ Add entry to `__props.json` with type, label, and `variants_group` targeting the
 1. Add entry to `__props.json` with `"type": "group-fields"` and `"related_options": "option_key"`
 2. Add the field structure to `__props_options.json` under that option key with `fields` and `group_rules.max`
 
-See [Rich Content Building](/cynthia/cms/rich-content-building/) for the complete section/tile catalog, dye system, and config options reference.
+See [Rich Content Building](https://github.com/entirius/entirius-pwa-cms/blob/develop/docs/rich-content-building.md) for the complete section/tile catalog, dye system, and config options reference.
