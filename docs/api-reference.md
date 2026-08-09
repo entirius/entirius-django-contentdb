@@ -1,4 +1,7 @@
-# API Reference -- django-contentdb
+---
+title: API Reference
+description: Complete endpoint reference for the django-contentdb Admin and Public APIs.
+---
 
 ## Overview
 
