@@ -1,5 +1,21 @@
 # Changelog
 
+## 5.1.0 — 2026-08-11
+
+- v1 Admin API authenticates with `JWTAuthentication` (djangorestframework-simplejwt)
+  instead of the `DjangoAuth` class, which delegated to
+  `django.contrib.auth.authenticate()` and therefore depended on the deploying
+  service listing a JWT-reading backend in `AUTHENTICATION_BACKENDS`. That
+  requirement was undocumented and unenforceable — a service adopting contentdb
+  without it got HTTP 401 on every admin request. v1 now matches v2, and the
+  module no longer has a hidden dependency on `entirius-django-accounts`.
+- Removed `DjangoAuth` from `django_contentdb.utils`. Deployments that relied on
+  a custom `AUTHENTICATION_BACKENDS` entry to authenticate v1 admin requests must
+  issue simplejwt tokens instead.
+- Authenticating on the v1 Admin API no longer requires the user to be a
+  storefront customer (`UserExtensionProxy.is_customer`), a condition the old
+  backend imposed. Authorization is unchanged: `IsAdminUser | ContentTypePermission`.
+
 ## 5.0.1 — 2026-08-06
 
 - Restore case-insensitive language filtering.

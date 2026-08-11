@@ -60,7 +60,7 @@ ignore = ["E501"]
 "src/django_contentdb/models/**" = ["DJ001", "DJ008", "DJ012"]
 "src/django_contentdb/serializers/**" = ["B904", "E731", "F841"]
 "src/django_contentdb/tests.py" = ["S101", "F841"]
-"src/django_contentdb/utils.py" = ["B904", "S110"]
+"src/django_contentdb/utils.py" = ["S110"]
 "src/django_contentdb/views/**" = ["B026", "B904", "E731", "S110"]
 
 [tool.ruff.lint.isort]

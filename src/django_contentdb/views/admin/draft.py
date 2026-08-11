@@ -10,13 +10,13 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from django_contentdb.enums import Action
 from django_contentdb.filters import DraftFilter
 from django_contentdb.models import ActivityLog, Content, ContentType, Deleted, Draft, DraftAuthor, DraftCoAuthor
 from django_contentdb.permissions import ContentTypePermission
 from django_contentdb.serializers import DraftContentSerializer, PublishedContentSerializer
-from django_contentdb.utils import DjangoAuth as TokenAuthentication
 from django_contentdb.utils import StandardPagination
 from django_contentdb.viewsets import ContentDBModelViewSet as ModelViewSet
 
@@ -33,7 +33,7 @@ class DraftViewSet(ModelViewSet):
     filter_backends = (django_filters.DjangoFilterBackend,)
     filterset_class = DraftFilter
     pagination_class = StandardPagination
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated & (IsAdminUser | ContentTypePermission)]
     lookup_field = "uid"
 
