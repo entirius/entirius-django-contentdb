@@ -10,14 +10,11 @@ import tempfile
 from math import ceil
 
 import image_transformations
-from django.contrib import auth
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.db.models.fields.files import ImageField, ImageFieldFile
-from django_utils.api.exceptions import JWTException
 from PIL import Image
-from rest_framework import authentication, exceptions
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
@@ -367,18 +364,3 @@ class UniqueFileSystemStorage(FileSystemStorage):
         # Allow saving a duplicate by delegating to Django's default alternative name generation.
         # This will append a unique suffix to the filename instead of raising an error.
         return super().get_alternative_name(file_root, file_ext)
-
-
-class DjangoAuth(authentication.TokenAuthentication):
-    def authenticate(self, request):
-        try:
-            user = auth.authenticate(request)
-        except JWTException as e:
-            raise exceptions.NotAuthenticated(detail=e.message)
-        except Exception as e:
-            raise exceptions.AuthenticationFailed(detail=e)
-
-        if user is None:
-            raise exceptions.AuthenticationFailed()
-
-        return user, None

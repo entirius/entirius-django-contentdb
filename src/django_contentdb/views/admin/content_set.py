@@ -4,12 +4,12 @@
 
 from django_filters import rest_framework as django_filters
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from django_contentdb.filters import ContentSetFilter
 from django_contentdb.models import ContentSet
 from django_contentdb.permissions import ContentTypePermission
 from django_contentdb.serializers import ContentSetSerializer
-from django_contentdb.utils import DjangoAuth as TokenAuthentication
 from django_contentdb.utils import StandardPagination
 from django_contentdb.viewsets import ContentDBModelViewSet as ModelViewSet
 
@@ -26,7 +26,7 @@ class ContentSetViewSet(ModelViewSet):
     filter_backends = (django_filters.DjangoFilterBackend,)
     filterset_class = ContentSetFilter
     pagination_class = StandardPagination
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated & (IsAdminUser | ContentTypePermission)]
     lookup_field = "uid"
 
