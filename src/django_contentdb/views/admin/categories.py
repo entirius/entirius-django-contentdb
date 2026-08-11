@@ -3,11 +3,11 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from django_contentdb.models import Category
 from django_contentdb.permissions import ContentTypePermission
 from django_contentdb.serializers import CategorySerializer
-from django_contentdb.utils import DjangoAuth as TokenAuthentication
 from django_contentdb.utils import StandardPagination
 from django_contentdb.viewsets import ContentDBModelViewSet as ModelViewSet
 
@@ -23,7 +23,7 @@ class CategoryViewSet(ModelViewSet):
     queryset = Category.objects.all().order_by("-created_at")
     serializer_class = CategorySerializer
     pagination_class = StandardPagination
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated & (IsAdminUser | ContentTypePermission)]
     lookup_field = "uid"
 

@@ -1,4 +1,7 @@
-# API Reference -- django-contentdb
+---
+title: API Reference
+description: Complete endpoint reference for the django-contentdb Admin and Public APIs.
+---
 
 ## Overview
 
@@ -99,9 +102,14 @@ Every response, including errors, is wrapped in the same envelope.
 
 ### Admin API
 
-**Authentication class:** `DjangoAuth` -- a subclass of DRF `TokenAuthentication` that delegates to
-`django.contrib.auth.authenticate`. In the Volkanos stack this resolves JWT tokens via the
-`django-utils` package (`JWTException` is translated to `NotAuthenticated`).
+**Authentication class:** `JWTAuthentication` (djangorestframework-simplejwt), the same class the
+v2 Admin API uses. Send the access token as `Authorization: Bearer <token>`. The module reads the
+token itself and does not depend on the deploying service's `AUTHENTICATION_BACKENDS`.
+
+> **Changed in 5.1.0.** Until 5.0.1 the v1 Admin API used `DjangoAuth`, which delegated to
+> `django.contrib.auth.authenticate()` and so only worked when the deploying service happened to
+> list a JWT-reading backend in `AUTHENTICATION_BACKENDS`. Deployments that authenticated v1 admin
+> requests through a custom backend must issue simplejwt tokens instead.
 
 **Default permission class:** `IsAuthenticated`
 
@@ -181,7 +189,7 @@ Default: `/api-admin/contentdb/v1/`
 **Lookup:** `slug` (string)
 **Lookup URL:** `attributes/{slug}/`
 **Methods:** GET (list), GET (retrieve), POST (create), PUT (update), PATCH (partial update), DELETE
-**Auth:** DjangoAuth + IsAuthenticated
+**Auth:** JWTAuthentication + IsAuthenticated
 **Filter class:** `AttributeFilter`
 **Pagination:** StandardPagination (default 6, max 100)
 **Default order:** `-created_at`
@@ -223,7 +231,7 @@ Default: `/api-admin/contentdb/v1/`
 **Lookup:** `pk` (integer)
 **Lookup URL:** `attributes/{attribute_slug}/values/{pk}/`
 **Methods:** GET (list), GET (retrieve), POST (create), PUT (update), PATCH (partial update), DELETE
-**Auth:** DjangoAuth + IsAuthenticated
+**Auth:** JWTAuthentication + IsAuthenticated
 **Pagination:** StandardPagination
 **Default order:** `-created_at`
 
@@ -250,7 +258,7 @@ duplicate value returns the existing record without error.
 **Lookup:** `slug` (string)
 **Lookup URL:** `attribute-sets/{slug}/`
 **Methods:** GET (list), GET (retrieve), POST (create), PUT (update), PATCH (partial update), DELETE
-**Auth:** DjangoAuth + IsAuthenticated
+**Auth:** JWTAuthentication + IsAuthenticated
 **Pagination:** StandardPagination
 **Default order:** `-created_at`
 
@@ -270,7 +278,7 @@ duplicate value returns the existing record without error.
 **Lookup:** `slug` (string)
 **Lookup URL:** `content-types/{slug}/`
 **Methods:** GET (list), GET (retrieve), POST (create), PUT (update), PATCH (partial update), DELETE
-**Auth:** DjangoAuth + IsAuthenticated
+**Auth:** JWTAuthentication + IsAuthenticated
 **Pagination:** StandardPagination
 **Default order:** `-created_at`
 
@@ -308,7 +316,7 @@ Each element of `attributes`:
 **Lookup:** `slug` (string)
 **Lookup URL:** `layout-extender-types/{slug}/`
 **Methods:** GET (list), GET (retrieve), POST (create), PUT (update), PATCH (partial update), DELETE
-**Auth:** DjangoAuth + IsAuthenticated
+**Auth:** JWTAuthentication + IsAuthenticated
 **Pagination:** StandardPagination
 **Default order:** `-created_at`
 
@@ -323,7 +331,7 @@ Identical to Content Types but queryset is filtered to `is_layout_extender=True`
 **Lookup:** `url` (string)
 **Lookup URL:** `routes/{url}/`
 **Methods:** GET (list), GET (retrieve), POST (create), PUT (update), PATCH (partial update), DELETE
-**Auth:** DjangoAuth + IsAuthenticated
+**Auth:** JWTAuthentication + IsAuthenticated
 **No pagination** (no `pagination_class` -- returns full list)
 **Default order:** `url` (ascending)
 **Queryset:** Excludes routes with empty `label`
@@ -352,7 +360,7 @@ Identical to Content Types but queryset is filtered to `is_layout_extender=True`
 **Lookup:** `uid` (UUID)
 **Lookup URL:** `content-sets/{uid}/`
 **Methods:** GET (list), GET (retrieve), POST (create), PUT (update), PATCH (partial update), DELETE
-**Auth:** DjangoAuth + IsAuthenticated
+**Auth:** JWTAuthentication + IsAuthenticated
 **Pagination:** StandardPagination
 **Default order:** `-created_at`
 **Queryset:** Only ContentSets whose members have `is_layout_extender=False`
@@ -390,7 +398,7 @@ each UUID to a Draft and associates it with the ContentSet. Updating replaces al
 **Lookup:** `uid` (UUID)
 **Lookup URL:** `layout-extender-sets/{uid}/`
 **Methods:** GET (list), GET (retrieve), POST (create), PUT (update), PATCH (partial update), DELETE
-**Auth:** DjangoAuth + IsAuthenticated
+**Auth:** JWTAuthentication + IsAuthenticated
 **Pagination:** StandardPagination
 **Default order:** `-created_at`
 **Queryset:** Only ContentSets whose members have `is_layout_extender=True`
@@ -405,7 +413,7 @@ Same serializer and filters as Content Sets.
 **Lookup:** `uid` (UUID)
 **Lookup URL:** `content/{content_type}/{uid}/`
 **Methods:** GET (list), GET (retrieve), POST (create), PUT (update), PATCH (partial update), DELETE
-**Auth:** DjangoAuth + IsAuthenticated & (IsAdminUser | ContentTypePermission)
+**Auth:** JWTAuthentication + IsAuthenticated & (IsAdminUser | ContentTypePermission)
 **Pagination:** StandardPagination
 **Default order:** (model default)
 **Filter class:** `DraftFilter`
@@ -547,7 +555,7 @@ first). Paginated with `StandardPagination`. Each item uses `PublishedContentSer
 **URL:** `layout-extender/{content_type}/`
 **Lookup URL:** `layout-extender/{content_type}/{uid}/`
 **Methods:** GET (list), GET (retrieve), POST (create), PUT (update), PATCH (partial update), DELETE
-**Auth:** DjangoAuth + IsAuthenticated & (IsAdminUser | ContentTypePermission)
+**Auth:** JWTAuthentication + IsAuthenticated & (IsAdminUser | ContentTypePermission)
 
 Identical to Content (Drafts) but `get_content_type()` resolves ContentTypes with
 `is_layout_extender=True`. Same serializer, same filters, same publish/unpublish actions.
@@ -560,7 +568,7 @@ Identical to Content (Drafts) but `get_content_type()` resolves ContentTypes wit
 **Lookup:** `uid` (UUID)
 **Lookup URL:** `published/{content_type}/{uid}/`
 **Methods:** GET (list), GET (retrieve)
-**Auth:** DjangoAuth + IsAuthenticated
+**Auth:** JWTAuthentication + IsAuthenticated
 **Pagination:** StandardPagination
 **Filter class:** `PublishedFilter`
 **Sorting fields:** `published__draft__created_at`, `updated_at`
@@ -655,7 +663,7 @@ Extends `ContentSerializer` with publication-context fields.
 **URL:** `layout-extender-published/{content_type}/`
 **Lookup URL:** `layout-extender-published/{content_type}/{uid}/`
 **Methods:** GET (list), GET (retrieve)
-**Auth:** DjangoAuth + IsAuthenticated
+**Auth:** JWTAuthentication + IsAuthenticated
 
 Identical to Published Content but queryset additionally filters for
 `published__draft__content_type__is_layout_extender=True`. Same serializer, same filters, same
@@ -669,7 +677,7 @@ sorting.
 **Lookup:** `uid` (UUID)
 **Lookup URL:** `images/{uid}/`
 **Methods:** GET (list), GET (retrieve), POST (create), PUT (update), PATCH (partial update), DELETE
-**Auth:** DjangoAuth + IsAuthenticated
+**Auth:** JWTAuthentication + IsAuthenticated
 **Pagination:** StandardPagination
 **Filter class:** `ImageFilter`
 
@@ -736,7 +744,7 @@ on disk.
 **Lookup:** `slug` (string)
 **Lookup URL:** `image-tags/{slug}/`
 **Methods:** GET (list), GET (retrieve), POST (create), PUT (update), PATCH (partial update), DELETE
-**Auth:** DjangoAuth + IsAuthenticated
+**Auth:** JWTAuthentication + IsAuthenticated
 **Pagination:** StandardPagination
 **Default order:** `slug` (ascending)
 
@@ -755,7 +763,7 @@ on disk.
 **Lookup:** `iso2` (string)
 **Lookup URL:** `languages/{iso2}/`
 **Methods:** GET (list), GET (retrieve)
-**Auth:** DjangoAuth + IsAuthenticated
+**Auth:** JWTAuthentication + IsAuthenticated
 **Pagination:** StandardPagination
 **Default order:** `-iso2`
 
@@ -777,7 +785,7 @@ router. No create/update/delete is exposed.
 **Lookup:** `uid` (UUID)
 **Lookup URL:** `category/{uid}/`
 **Methods:** GET (list), GET (retrieve), POST (create), PUT (update), PATCH (partial update), DELETE
-**Auth:** DjangoAuth + IsAuthenticated
+**Auth:** JWTAuthentication + IsAuthenticated
 **Pagination:** StandardPagination
 **Default order:** `-created_at`
 
@@ -803,7 +811,7 @@ router. No create/update/delete is exposed.
 
 **URL:** `content-permissions/`
 **Method:** GET
-**Auth:** DjangoAuth + IsAuthenticated
+**Auth:** JWTAuthentication + IsAuthenticated
 **No pagination**
 
 Returns the set of content type permissions for the current user. Superusers receive all
@@ -833,7 +841,7 @@ Response:
 
 **URL:** `layout-extender-permissions/`
 **Method:** GET
-**Auth:** DjangoAuth + IsAuthenticated
+**Auth:** JWTAuthentication + IsAuthenticated
 **No pagination**
 
 Same as Content Permissions but filtered to ContentTypes with `is_layout_extender=True`. For

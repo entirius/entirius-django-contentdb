@@ -4,12 +4,12 @@
 
 from django_filters import rest_framework as django_filters
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from django_contentdb.filters import RouteFilter
 from django_contentdb.models import Route
 from django_contentdb.permissions import ContentTypePermission
 from django_contentdb.serializers import RouteSerializer
-from django_contentdb.utils import DjangoAuth as TokenAuthentication
 from django_contentdb.viewsets import ContentDBModelViewSet as ModelViewSet
 
 
@@ -18,6 +18,6 @@ class RouteViewSet(ModelViewSet):
     serializer_class = RouteSerializer
     filter_backends = (django_filters.DjangoFilterBackend,)
     filterset_class = RouteFilter
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated & (IsAdminUser | ContentTypePermission)]
     lookup_field = "url"

@@ -10,12 +10,12 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from django_contentdb.filters import PublishedFilter
 from django_contentdb.models import Content, ContentType, DraftAuthor, DraftCoAuthor
 from django_contentdb.permissions import ContentTypePermission
 from django_contentdb.serializers import PublishedContentSerializer
-from django_contentdb.utils import DjangoAuth as TokenAuthentication
 from django_contentdb.utils import StandardPagination
 from django_contentdb.viewsets import PublishedSortMixin, ROContentDBModelViewSet
 
@@ -27,7 +27,7 @@ class PublishedViewSet(PublishedSortMixin, ROContentDBModelViewSet):
     filter_backends = (django_filters.DjangoFilterBackend,)
     filterset_class = PublishedFilter
     pagination_class = StandardPagination
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated & (IsAdminUser | ContentTypePermission)]
     lookup_field = "uid"
     distinct_fields = ["published__draft_id"]

@@ -1,4 +1,7 @@
-# Models Reference -- django-contentdb
+---
+title: Models Reference
+description: Field-level inventory of all django-contentdb ORM models — fields, constraints, relationships.
+---
 
 Complete field-level inventory of all 22 ORM models in `django_contentdb`. Covers fields, types, constraints, relationships, and special behavior.
 

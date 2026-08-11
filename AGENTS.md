@@ -94,7 +94,7 @@ src/django_contentdb/
 ├── permissions.py                   # ContentTypePermission (action-based per content_type)
 ├── enums.py                         # Action: CREATE, UPDATE, DELETE, PUBLISH, VIEW
 ├── settings.py                      # ADMIN_BASE_URL, PUBLIC_BASE_URL, THUMBNAIL_QUALITY, IMAGE_MAX_WIDTH
-├── utils.py                         # StandardPagination, HashedImageField, DjangoAuth, exception_handler
+├── utils.py                         # StandardPagination, HashedImageField, exception_handler
 ├── image_manager.py                 # PIL utilities: resize, crop, transparency removal
 ├── management/commands/
 │   ├── sync_contentdb_channels.py   #   Sync ContentChannels from PIM
@@ -137,7 +137,7 @@ Content (UUID pk, JSON blob: {tiles, sections, tiles_order, sections_order})
 
 ### Admin API — `/{ADMIN_BASE_URL}/contentdb/{version}/`
 
-Default: `/api-admin/contentdb/v1/`. Auth: DjangoAuth + IsAdminUser | ContentTypePermission.
+Default: `/api-admin/contentdb/v1/`. Auth: JWTAuthentication + IsAdminUser | ContentTypePermission.
 
 ```
 contentdb/v1/
@@ -271,7 +271,7 @@ python manage.py propagate_content_channels --channel=default  # Assign channel 
 - `standard_exception_handler` wraps ALL errors in `{"meta": {...}, "data": ...}` format
 - Layout extender routes are separate from content routes — `is_layout_extender=True` ContentTypes use `layout-extender/*` paths
 - Author cannot appear in both `authors` and `co_authors` M2M on the same Draft — validated in service layer and API
-- v2 Author endpoints use JWT + IsAdminUser (not DjangoAuth like v1)
+- Both API versions authenticate with simplejwt `JWTAuthentication` — the module reads the Bearer token itself and never relies on the service's `AUTHENTICATION_BACKENDS` (v1 did until 5.1.0, which made admin auth silently deployment-dependent)
 - ContentType.supports_authors controls which types show author picker in CMS — only blog-post by default
 - Published author data is a live reference through draft — changing authors on draft changes what published shows without re-publishing
 - `?author=` filter on v1 endpoints searches both authors and co-authors by slug or UUID

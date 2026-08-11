@@ -5,10 +5,10 @@
 import logging
 
 from django.db.models import Q
-from django_filters import CharFilter, ModelChoiceFilter, ModelMultipleChoiceFilter
+from django_filters import CharFilter, ModelMultipleChoiceFilter
 
 from django_contentdb.filters import ContentFilter
-from django_contentdb.models import AccessRights, Language, Route
+from django_contentdb.models import AccessRights, Route
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +23,7 @@ class PublishedFilter(ContentFilter):
             queryset=AccessRights.objects.all(),
         )
 
-        language_filter = ModelChoiceFilter(
-            field_name="published__draft__language__iso2", to_field_name="iso2", queryset=Language.objects.all()
-        )
+        language_filter = CharFilter(method=self._filter_by_language)
 
         route_filter = ModelMultipleChoiceFilter(
             field_name="published__draft__routes__url", to_field_name="url", queryset=Route.objects.all()
@@ -44,6 +42,10 @@ class PublishedFilter(ContentFilter):
                 "author": CharFilter(method=self.filter_author),
             }
         )
+
+    @staticmethod
+    def _filter_by_language(queryset, name, value):
+        return queryset.filter(published__draft__language__iso2__iexact=value)
 
     def filter_channel(self, queryset, name, value):
         if value:
