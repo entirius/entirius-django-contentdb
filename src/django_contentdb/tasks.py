@@ -7,6 +7,7 @@ import os
 
 from celery import shared_task
 from django.conf import settings
+from django.core.files import File
 
 from .image_manager import ImageManager
 from .models import Image, Thumbnail
@@ -52,7 +53,7 @@ def optimize_image(image_pk: int) -> None:
         f = open(tmp_path, "rb")
         try:
             thumb = Thumbnail(source=record, method=method)
-            thumb.image.save(tmp_file_name, f)
+            thumb.image.save(tmp_file_name, File(f, name=tmp_file_name))
             thumb.save()
             logger.info(f"Saved thumbnail for Image {record.uid} with method {method}")
         except Exception as e:
