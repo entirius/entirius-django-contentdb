@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+- Access: the module declares its own access areas on its AppConfig and its admin views (copied from the
+  entirius-django-access defaults; behaviour unchanged).
+
 ## 5.1.0 — 2026-08-11
 
 - v1 Admin API authenticates with `JWTAuthentication` (djangorestframework-simplejwt)
