@@ -20,4 +20,5 @@ class RouteViewSet(ModelViewSet):
     filterset_class = RouteFilter
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated & (IsAdminUser | ContentTypePermission)]
+    access_area = "content.pages"
     lookup_field = "url"

@@ -28,6 +28,7 @@ from django_contentdb.services import author_service
 class AuthorViewSet(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminUser]
+    access_area = "content.pages"
     pagination_class = AdminPageNumberPagination
 
     @extend_schema(
