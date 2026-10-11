@@ -1,10 +1,8 @@
 # AGENTS.md
 
-## Quick Reference
-
-Content management module for the Volkanos ecommerce platform. JSON-based page content with draft/publish workflow, routing, access control, media management, and blog authoring. v1 API for content CRUD, v2 API for author management (Pydantic + drf-spectacular).
-
-**Tech:** Python >=3.10, Django >=4.0, DRF, django-filter, Pillow, Pydantic, drf-spectacular, djangorestframework-simplejwt
+`entirius-django-contentdb` (Django app `django_contentdb`) — content management module of Entirius: JSON page
+content with a draft/publish workflow, routing, channel scoping, media management and blog authoring; v1 API for
+content CRUD, v2 API for author management (Pydantic + drf-spectacular).
 
 ## Commands
 
@@ -14,6 +12,8 @@ Content management module for the Volkanos ecommerce platform. JSON-based page c
 | `make check` | lint + format-check (ruff) |
 | `make fix` | auto-fix lint + format |
 | `make test` | test suite (pytest + pytest-django) |
+
+Tests need PostgreSQL: set `DATABASE_URL` (the default in `tests/settings.py` points at a local postgres).
 
 ## Conventions
 
@@ -26,12 +26,13 @@ Content management module for the Volkanos ecommerce platform. JSON-based page c
 - Access: areas live on the AppConfig (`access_areas`, `access_route_rules`), every admin view carries
   `access_area`; a new admin route without one fails `tests/test_access_ownership.py`.
 - Default: do not commit — git is the user's call.
+- No AI attribution in commits or PR descriptions.
 
 ## Architecture
 
 ```
 src/django_contentdb/
-├── models/                          # 26 ORM models (one file per entity)
+├── models/                          # ORM models (one file per entity)
 │   ├── content.py                   #   Content (UUID pk, JSONField body)
 │   ├── content_type.py              #   ContentType (slug↑, is_layout_extender, supports_authors)
 │   ├── content_channel.py           #   ContentChannel (idx↑, name, default_language FK, is_default)
@@ -62,7 +63,8 @@ src/django_contentdb/
 ├── services/                        # Business logic
 │   ├── sync_service.py              #   sync_channels_from_pim(), sync_languages_from_pim()
 │   ├── author_service.py            #   CRUD + reassignment + set_draft_authors
-│   └── content_service.py           #   sanitize_content(), sanitize_html() — stored page HTML allowlist
+│   ├── content_service.py           #   sanitize_content(), sanitize_html() — stored page HTML allowlist
+│   └── navigation_service.py        #   get_published_navigation() (cached)
 │
 ├── api/                             # v2 API (Pydantic + drf-spectacular)
 │   └── v2/
@@ -75,8 +77,8 @@ src/django_contentdb/
 │   └── responses/author.py          #   AuthorResponse, AuthorBriefResponse, AuthorListResponse
 │
 ├── views/                           # DRF ViewSets (v1 admin + public mirrors)
-│   ├── admin/                       #   17 ViewSets + 2 function views (CRUD + publish)
-│   └── public/                      #   16 ViewSets (read-only)
+│   ├── admin/                       #   ViewSets + function views (CRUD + publish)
+│   └── public/                      #   read-only ViewSets
 │
 ├── serializers/                     # DRF serializers (v1 API)
 │   ├── content.py                   #   ContentSerializer, DraftContentSerializer
@@ -102,127 +104,30 @@ src/django_contentdb/
 ├── management/commands/
 │   ├── sync_contentdb_channels.py   #   Sync ContentChannels from PIM
 │   ├── sync_contentdb_languages.py  #   Sync Languages from django_regional
-│   └── propagate_content_channels.py #  Assign channels to drafts with empty M2M
-├── admin.py                         # Django admin (20 registered models, Author + DraftAuthor/DraftCoAuthor inlines)
-├── urls.py                          # Admin + public routers (19 routes each)
+│   ├── propagate_content_channels.py #  Assign channels to drafts with empty M2M
+│   └── images-optimize.py           #   Re-optimize all images
+├── admin.py                         # Django admin (Author + DraftAuthor/DraftCoAuthor inlines)
+├── urls.py                          # Admin + public routers
 └── tasks.py                         # Celery: image optimization
 ```
 
 Layer rule: v1 views use DRF serializers directly (no service layer for CRUD). v2 Author API uses Pydantic schemas + service layer. `viewsets.py` base classes auto-log to ActivityLog. Sync logic lives in `services/sync_service.py`, author CRUD in `services/author_service.py`.
 
----
+**Does:** Store/serve JSON page content, draft/publish lifecycle, image uploads + thumbnails, attribute metadata, access control, activity audit logging, blog author management
 
-## Content Pipeline
+**Does NOT:** Render content (storefront's job), define page layouts (the CMS's job). Optional sync from PIM/django_regional (graceful fallback when not installed)
 
-```
-Content (UUID pk, JSON blob: {tiles, sections, tiles_order, sections_order})
-  → Draft (links ContentType + Content + Language + ContentChannel M2M)
-    → Published (immutable snapshot of Draft + Content)
-      → Route (URL path, M2M→Draft, placement: top|bottom)
-```
-
-- **ContentType** defines the template: `static-page`, `header`, `blog-post`, `product-rich-content`, `category-rich-content`
-- **ContentType.is_layout_extender** = true → header type (separate API routes)
-- **ContentType.supports_authors** = true → enables author picker in CMS (only `blog-post` by default)
-- **Author** — author profiles with name, slug, role/bio/tag translations, photo, contacts, social links
-- **DraftAuthor / DraftCoAuthor** — through-tables linking Draft ↔ Author with position ordering
-- **ContentChannel** — local mirror of PIM Channel (idx↑, name, default_language FK, is_default). Syncs from PIM via admin action or management command. Empty `Draft.channels` M2M = content is public (all channels).
-- **AccessRights** — DEPRECATED. Replaced by ContentChannel. Kept for backward compatibility during transition.
-- Content/Route `delete()` prevents deletion of `home` and `header` records
-
----
-
-## API
-
-**Response wrapper** (all endpoints): `{"meta": {"status": "OK|CREATED|UPDATED|DELETED|ERROR"}, "data": ...}`
-
-**Pagination:** `StandardPagination` — page_size=6, max=100, query param: `limit`
-
-### Admin API — `/{ADMIN_BASE_URL}/contentdb/{version}/`
-
-Default: `/api-admin/contentdb/v1/`. Auth: JWTAuthentication + IsAdminUser | ContentTypePermission.
-
-```
-contentdb/v1/
-├── attributes/                         CRUD
-│   └── {attribute_slug}/values/        CRUD (nested)
-├── attribute-sets/                     CRUD
-├── content-types/                      CRUD
-├── routes/                             CRUD
-├── content-sets/                       CRUD
-├── content/{content_type}/             CRUD drafts
-│   └── {uid}/published/               POST (publish), DELETE (unpublish)
-├── published/{content_type}/           RO
-├── layout-extender-types/              CRUD (is_layout_extender=True only)
-├── layout-extender-sets/               CRUD
-├── layout-extender/{content_type}/     CRUD layout drafts
-├── layout-extender-published/...       RO
-├── images/                             CRUD
-├── image-tags/                         CRUD
-├── languages/                          CRUD
-├── channels/                           RO (ContentChannel list/retrieve)
-├── category/                           CRUD
-├── content-permissions/                FBV (manage per-type permissions)
-└── layout-extender-permissions/        FBV
-```
-
-### Public API — `/{PUBLIC_BASE_URL}/contentdb/{version}/`
-
-Default: `/api/contentdb/v1/`. Auth: AllowAny.
-
-Same routes as admin but **read-only** (list + retrieve only). Key query:
-
-```
-GET /api/contentdb/v1/published/{content_type_slug}/?routes=home&language=EN&channel=default
-```
-
-Filters: `routes` (url), `language` (iso2), `channel` (ContentChannel idx), `author` (slug or UUID), `access_rights` (deprecated). Sort: `created_at` (maps to draft's created_at). Channel filter: returns content assigned to that channel + public content (empty channels M2M). Author filter: searches both authors and co-authors on drafts.
-
-Full endpoint details: `docs/api-reference.md`
-
-### v2 Admin API — /api/contentdb/v2/admin/
-
-| Method | Endpoint | Purpose |
-|--------|----------|---------|
-| GET | /authors/ | List authors (search, is_active, channel post count) |
-| POST | /authors/ | Create author (auto-slug) |
-| GET | /authors/{uid}/ | Author detail |
-| PATCH | /authors/{uid}/ | Update author |
-| DELETE | /authors/{uid}/ | Delete with reassignment |
-
-Auth: JWT + IsAdminUser. Pagination: 20/page, max 100. Pydantic schemas for request/response validation.
-
----
-
-## Data Model — Authoring
-
-| Entity | Key Fields |
-|--------|------------|
-| Author | uid (UUID), slug↑, name, role_t9n, description_t9n, tag_t9n, photo→Image, contacts, social_profiles, is_active |
-| DraftAuthor | draft→Draft, author→Author, position (unique together: draft+author) |
-| DraftCoAuthor | draft→Draft, author→Author, position (unique together: draft+author) |
-
----
-
-## Image Handling
-
-- **HashedImageField** — SHA256 content-addressed storage: `aa/bb/cccccccc...{ext}`
-- **Auto-resize** on upload: max width = `CONTENTDB_IMAGE_MAX_WIDTH` (default 2560)
-- **Thumbnail** model: unique per (method, source, width, height)
-- **Deduplication**: same file content → same hash → same path (no duplicates)
-- Uses `image_transformations` library with PIL fallback
-
----
-
-## Key Enums
-
-| Enum | Values |
-|------|--------|
-| **Action** | CREATE, UPDATE, DELETE, PUBLISH, VIEW |
-| **Thumbnail.method** | "optimize" |
-| **Route.placement** | "top", "bottom" |
-
----
+| Topic | Where |
+|---|---|
+| Content pipeline, image handling | `docs/content-pipeline.md` |
+| API overview (v1 admin/public, v2 authors) | `docs/api.md` |
+| Full API surface: endpoints, serializer fields, filters, permissions | `docs/api-reference.md` |
+| Data model, authoring entities, key enums | `docs/data-model.md` |
+| Complete model inventory | `docs/models-reference.md` |
+| ERD config for the docs ERD generator | `docs/erd-config.yaml`, `docs/erd.md` |
+| CMS builder config | `docs/cms-config.md` |
+| Management commands | `docs/commands.md` |
+| Testing, factories | `docs/testing.md` |
 
 ## Settings
 
@@ -232,33 +137,6 @@ Auth: JWT + IsAdminUser. Pagination: 20/page, max 100. Pydantic schemas for requ
 | `API_PUBLIC_BASE_URL` | `/api/` | Public API prefix |
 | `CONTENTDB_THUMBNAIL_QUALITY` | 60 | JPEG thumbnail quality |
 | `CONTENTDB_IMAGE_MAX_WIDTH` | 2560 | Max upload width (0 = no resize) |
-
----
-
-## Testing
-
-Factory classes available:
-
-```
-tests/__init__.py: AttributeSetFactory, ContentTypeFactory, ContentFactory, DraftFactory, PublishedFactory, ContentChannelFactory
-```
-
-```bash
-make test                 # pytest (requires Postgres — set DATABASE_URL or use the CI default)
-```
-
----
-
-## Management Commands
-
-```bash
-# Sync commands (run inside Django service context)
-python manage.py sync_contentdb_channels    # Sync from PIM
-python manage.py sync_contentdb_languages   # Sync from django_regional
-python manage.py propagate_content_channels --channel=default  # Assign channel to public content
-```
-
----
 
 ## Gotchas
 
@@ -279,21 +157,3 @@ python manage.py propagate_content_channels --channel=default  # Assign channel 
 - ContentType.supports_authors controls which types show author picker in CMS — only blog-post by default
 - Published author data is a live reference through draft — changing authors on draft changes what published shows without re-publishing
 - `?author=` filter on v1 endpoints searches both authors and co-authors by slug or UUID
-
----
-
-## Module Boundaries
-
-**Does:** Store/serve JSON page content, draft/publish lifecycle, image uploads + thumbnails, attribute metadata, access control, activity audit logging, blog author management
-
-**Does NOT:** Render content (storefront's job), define page layouts (CMS Blueprint's job). Optional sync from PIM/django_regional (graceful fallback when not installed)
-
----
-
-## Reference Docs
-
-| File | Content |
-|------|---------|
-| `docs/api-reference.md` | Full API surface: all endpoints, serializer fields, filters, permissions |
-| `docs/models-reference.md` | Complete model inventory: fields, relationships, constraints, enums |
-| `docs/erd-config.yaml` | ERD diagram config for `make erd` |
