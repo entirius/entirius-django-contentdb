@@ -25,7 +25,7 @@ _ALLOWED_TAGS = frozenset(
 _VOID_TAGS = frozenset({"br", "hr", "img", "col"})
 _DROPPED_WITH_CONTENT = frozenset({"script", "style"})
 _ALLOWED_ATTRS = frozenset(
-    "href target src alt title width height style colspan rowspan colwidth data-color data-faq-tooltip".split()
+    "href target rel src alt title width height style colspan rowspan colwidth data-color data-faq-tooltip".split()
 )
 # A URL attribute keeps a value without a scheme (a path, an anchor) or with one of these.
 _URL_SCHEMES = {"href": frozenset({"http", "https", "mailto"}), "src": frozenset({"http", "https"})}

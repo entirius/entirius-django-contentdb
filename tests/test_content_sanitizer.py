@@ -48,6 +48,11 @@ def test_editor_markup_survives_unchanged():
         ('<a href="https://example.com" target="_blank">a</a>', None),
         ('<a href="mailto:shop@example.com">m</a><a href="/path#x">p</a><a href="#top">t</a>', None),
         ('<p title="&quot;><script>alert(1)</script>">a &lt;script&gt;alert(1)&lt;/script&gt; b</p>', None),
+        ('<a href="/x" rel="nofollow sponsored">a</a>', '<a href="/x" rel="nofollow sponsored">a</a>'),
+        (
+            '<a href="/x" target="_blank" rel="opener">a</a>',
+            '<a href="/x" target="_blank" rel="noopener noreferrer">a</a>',
+        ),
         ("a < b & c > d", "a &lt; b &amp; c &gt; d"),
     ],
 )
