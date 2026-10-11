@@ -61,7 +61,8 @@ src/django_contentdb/
 │
 ├── services/                        # Business logic
 │   ├── sync_service.py              #   sync_channels_from_pim(), sync_languages_from_pim()
-│   └── author_service.py            #   CRUD + reassignment + set_draft_authors
+│   ├── author_service.py            #   CRUD + reassignment + set_draft_authors
+│   └── content_service.py           #   sanitize_content(), sanitize_html() — stored page HTML allowlist
 │
 ├── api/                             # v2 API (Pydantic + drf-spectacular)
 │   └── v2/
@@ -265,6 +266,7 @@ python manage.py propagate_content_channels --channel=default  # Assign channel 
 - `AccessRights` is DEPRECATED — replaced by `ContentChannel`. Both `access_rights` and `channel` query params work during transition
 - `ContentChannel` syncs from PIM via `services/sync_service.py`. When PIM not installed, sync returns 0 gracefully
 - Empty `Draft.channels` M2M = public content (visible to all channel filters)
+- Page HTML is sanitised on write: `ContentSerializer.validate_content` / `validate_extension` (draft create, update, publish) call `content_service.sanitize_content`, which runs every markup-bearing string of the JSON through the allowlist of the CMS editor (keep it in step with the CMS `sanitizeHtml` allowlist). A string without a tag is stored as sent. Writes that bypass the serializers (Django admin, fixtures, `Content.objects.create`) are not sanitised; rows stored before this are cleaned on their next save
 - Published is immutable — creating a new Published from a Draft creates a new snapshot, doesn't update existing
 - Admin API prefix is `/api-admin/` (not `/api/v2/`) — this is v1 architecture, pre-Pydantic
 - DRF serializers (not Pydantic) — no drf-spectacular, no OpenAPI auto-generation
