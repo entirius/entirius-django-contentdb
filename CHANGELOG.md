@@ -5,6 +5,14 @@
 - Access: the module declares its own access areas on its AppConfig and its admin views (copied from the
   entirius-django-access defaults; behaviour unchanged).
 
+### Security
+
+- The router roots of the v1 public and admin APIs (an index of route names) declare `authentication_classes = []`
+  and `AllowAny`. They inherited the service default, so under DRF's defaults (session and Basic) the root answered
+  differently for a right and a wrong password sent as `Authorization: Basic`. The admin root carries the access area
+  `content.pages` itself (it was mapped by an access default for the framework's root view), so under the access gate
+  it answers as before. The views behind both roots are unchanged.
+
 ## 5.1.0 — 2026-08-11
 
 - v1 Admin API authenticates with `JWTAuthentication` (djangorestframework-simplejwt)
