@@ -180,3 +180,63 @@ const [content] = data
 ```
 
 The `channel` query param is added automatically from the `DEFAULT_CHANEL` env var via the storefront's `_methods` wrapper. No slug defaults to `home`. The builder caches content by slug.
+
+## Overview
+
+**Response wrapper** (all endpoints): `{"meta": {"status": "OK|CREATED|UPDATED|DELETED|ERROR"}, "data": ...}`
+
+**Pagination:** `StandardPagination` — page_size=6, max=100, query param: `limit`
+
+### Admin API — `/{ADMIN_BASE_URL}/contentdb/{version}/`
+
+Default: `/api-admin/contentdb/v1/`. Auth: JWTAuthentication + IsAdminUser | ContentTypePermission.
+
+```
+contentdb/v1/
+├── attributes/                         CRUD
+│   └── {attribute_slug}/values/        CRUD (nested)
+├── attribute-sets/                     CRUD
+├── content-types/                      CRUD
+├── routes/                             CRUD
+├── content-sets/                       CRUD
+├── content/{content_type}/             CRUD drafts
+│   └── {uid}/published/               POST (publish), DELETE (unpublish)
+├── published/{content_type}/           RO
+├── layout-extender-types/              CRUD (is_layout_extender=True only)
+├── layout-extender-sets/               CRUD
+├── layout-extender/{content_type}/     CRUD layout drafts
+├── layout-extender-published/...       RO
+├── images/                             CRUD
+├── image-tags/                         CRUD
+├── languages/                          CRUD
+├── channels/                           RO (ContentChannel list/retrieve)
+├── category/                           CRUD
+├── content-permissions/                FBV (manage per-type permissions)
+└── layout-extender-permissions/        FBV
+```
+
+### Public API — `/{PUBLIC_BASE_URL}/contentdb/{version}/`
+
+Default: `/api/contentdb/v1/`. Auth: AllowAny.
+
+Same routes as admin but **read-only** (list + retrieve only). Key query:
+
+```
+GET /api/contentdb/v1/published/{content_type_slug}/?routes=home&language=EN&channel=default
+```
+
+Filters: `routes` (url), `language` (iso2), `channel` (ContentChannel idx), `author` (slug or UUID), `access_rights` (deprecated). Sort: `created_at` (maps to draft's created_at). Channel filter: returns content assigned to that channel + public content (empty channels M2M). Author filter: searches both authors and co-authors on drafts.
+
+Full endpoint details: `docs/api-reference.md`
+
+### v2 Admin API — /api/contentdb/v2/admin/
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | /authors/ | List authors (search, is_active, channel post count) |
+| POST | /authors/ | Create author (auto-slug) |
+| GET | /authors/{uid}/ | Author detail |
+| PATCH | /authors/{uid}/ | Update author |
+| DELETE | /authors/{uid}/ | Delete with reassignment |
+
+Auth: JWT + IsAdminUser. Pagination: 20/page, max 100. Pydantic schemas for request/response validation.

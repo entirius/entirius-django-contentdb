@@ -1,7 +1,21 @@
 [project]
 name = "entirius-django-contentdb"
 version = "5.1.0"
-description = "ContentDB Django module for Volkanos"
+description = "Page content module for Entirius: JSON pages, draft/publish workflow, routes, images and blog authors"
+keywords = ["django", "cms", "content", "headless", "ecommerce", "entirius"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: Django",
+    "Framework :: Django :: 5.2",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP",
+]
 authors = [{ name = "Entirius" }]
 readme = "README.md"
 requires-python = ">=3.11"
@@ -31,7 +45,11 @@ dev  = ["ruff", "pre-commit"]
 test = ["pytest", "pytest-django", "dj-database-url", "psycopg[binary]"]
 
 [project.urls]
+Homepage = "https://docs.entirius.com/"
+Documentation = "https://github.com/entirius/entirius-django-contentdb/tree/develop/docs"
 Repository = "https://github.com/entirius/entirius-django-contentdb"
+Changelog = "https://github.com/entirius/entirius-django-contentdb/blob/develop/CHANGELOG.md"
+Issues = "https://github.com/entirius/entirius-django-contentdb/issues"
 
 [build-system]
 requires = ["hatchling"]

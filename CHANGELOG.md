@@ -5,6 +5,22 @@
 - Access: the module declares its own access areas on its AppConfig and its admin views (copied from the
   entirius-django-access defaults; behaviour unchanged).
 
+### Security
+
+- The router roots of the v1 public and admin APIs (an index of route names) declare `authentication_classes = []`
+  and `AllowAny`. They inherited the service default, so under DRF's defaults (session and Basic) the root answered
+  differently for a right and a wrong password sent as `Authorization: Basic`. The admin root carries the access area
+  `content.pages` itself (it was mapped by an access default for the framework's root view), so under the access gate
+  it answers as before. The views behind both roots are unchanged.
+
+- Page HTML is sanitised on write. Creating a draft, updating it and publishing it pass `content` and `extension`
+  through an allowlist (`services/content_service.py`): every string of the JSON that carries markup keeps only the
+  tags, attributes, URL schemes (`http`, `https`, `mailto`; images `http`, `https`) and style properties the CMS
+  editor writes; `script` and `style` elements go with their content, event handlers and `javascript:` / `data:`
+  URLs are dropped. Before, rich-text props were stored as sent and rendered as HTML by the CMS and the storefront,
+  so an account allowed to save content could store a script. Content stored earlier is not rewritten: it is
+  sanitised the next time it is saved or published.
+
 ## 5.1.0 — 2026-08-11
 
 - v1 Admin API authenticates with `JWTAuthentication` (djangorestframework-simplejwt)
