@@ -1,6 +1,6 @@
 [project]
 name = "entirius-django-contentdb"
-version = "5.1.0"
+version = "5.2.0"
 description = "Page content module for Entirius: JSON pages, draft/publish workflow, routes, images and blog authors"
 keywords = ["django", "cms", "content", "headless", "ecommerce", "entirius"]
 classifiers = [
