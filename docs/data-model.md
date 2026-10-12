@@ -223,3 +223,19 @@ The `meta` JSONField stores SEO data:
   "og_description": "Open Graph description"
 }
 ```
+
+## Authoring
+
+| Entity | Key Fields |
+|--------|------------|
+| Author | uid (UUID), slug↑, name, role_t9n, description_t9n, tag_t9n, photo→Image, contacts, social_profiles, is_active |
+| DraftAuthor | draft→Draft, author→Author, position (unique together: draft+author) |
+| DraftCoAuthor | draft→Draft, author→Author, position (unique together: draft+author) |
+
+## Key Enums
+
+| Enum | Values |
+|------|--------|
+| **Action** | CREATE, UPDATE, DELETE, PUBLISH, VIEW |
+| **Thumbnail.method** | "optimize" |
+| **Route.placement** | "top", "bottom" |

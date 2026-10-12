@@ -4,11 +4,27 @@
 
 from django.urls import include, path
 from rest_framework import routers
+from rest_framework.permissions import AllowAny
 
 from django_contentdb import settings
 from django_contentdb.views import admin, public
 
+
+class _RootView(routers.APIRootView):
+    """Router root: an index of route names. Declares its classes, so no service default evaluates credentials here."""
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+
+class _AdminRootView(_RootView):
+    """The admin index keeps its access area: under the access gate it stays an admin route, closed to anonymous."""
+
+    access_area = "content.pages"
+
+
 public_router = routers.DefaultRouter()
+public_router.APIRootView = _RootView
 public_router.register(r"attributes", public.ROAttributeViewSet, "public_attributes")
 public_router.register(
     r"attributes/(?P<attribute_slug>[^/.]+)/values", public.ROAttributeValueViewSet, "public_attribute_values"
@@ -33,6 +49,7 @@ public_router.register(r"category", public.ROCategoryViewSet, "public_category")
 public_router.register(r"authors", public.ROAuthorViewSet, "public_authors")
 
 admin_router = routers.DefaultRouter()
+admin_router.APIRootView = _AdminRootView
 admin_router.register(r"attributes", admin.AttributeViewSet, "admin_attributes")
 admin_router.register(
     r"attributes/(?P<attribute_slug>[^/.]+)/values", admin.AttributeValueViewSet, "admin_attribute_values"

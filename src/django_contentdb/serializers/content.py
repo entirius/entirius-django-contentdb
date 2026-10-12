@@ -10,6 +10,7 @@ from rest_framework.serializers import ValidationError
 
 from django_contentdb.models import Attribute, AttributeValue, Category, Content
 from django_contentdb.serializers.fields import CategoryField
+from django_contentdb.services.content_service import sanitize_content
 
 
 class ContentSerializer(serializers.ModelSerializer):
@@ -75,6 +76,12 @@ class ContentSerializer(serializers.ModelSerializer):
     class HasExtensionField(serializers.Field):
         def to_representation(self, value: dict):
             return value is not None and len(value) > 0
+
+    def validate_content(self, value):
+        return sanitize_content(value)
+
+    def validate_extension(self, value):
+        return sanitize_content(value)
 
     def validate_attributes(self, value):
         _type = self.context.get("_type")
