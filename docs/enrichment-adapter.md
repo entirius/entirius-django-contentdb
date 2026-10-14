@@ -49,6 +49,8 @@ belongs to the draft's content type.
 
 - **Merge.** A path write changes only the addressed key; the rest of `content`, `meta` or `extension` is kept.
   A section or tile that does not exist raises `ValueError`.
+- **Strings only.** A text path or text attribute takes `{"text": <str>}`; any other value (a dict, a missing
+  `text`) raises `ValueError` instead of being stringified.
 - **Sanitising.** Values pass `content_service.sanitize_content` (the editor allowlist), like an API write.
 - **Audit.** Every apply and revert writes an `ActivityLog` row as `proposal.reviewed_by`; a proposal without a
   reviewer is not logged.
@@ -68,12 +70,14 @@ belongs to the draft's content type.
 - route = the slugified `slug` (or title), suffixed `-2`, `-3`, … when taken.
 
 `revert` deletes the created draft (`proposal.result_ref`) and the routes only it uses. A draft that has been
-published is never deleted: `revert` raises `ValueError`.
+published, or edited after it was created (its content saved again, e.g. in the CMS), is never deleted: `revert`
+raises `ValueError`. `create_draft` aligns the content's `updated_at` with `created_at`, so any later save counts
+as an edit.
 
 ## Other callables
 
-- `resolve_targets`: `list` / `csv` page the `refs`; `filter` pages the draft uids of `channel` (filters
-  `content_type`, `language`).
+- `resolve_targets`: `list` pages the `refs` (the bus parses `csv` itself); `filter` pages the draft uids of
+  `channel` (filters `content_type`, `language`). A missing channel or an unknown filter key raises `ValueError`.
 - `find_gaps`: no checks yet, always `[]`.
 - `channel_languages`: the channel's default language first, then the other languages of its drafts.
 - `make_locator` / `field_key`: `{"path": key}` and back; an unknown key raises `ValueError`.

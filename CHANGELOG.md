@@ -7,7 +7,7 @@
   `extension.*`, section and tile texts) and content-type attributes (select, multiselect, text), with merge writes,
   sanitising and an `ActivityLog` row as the reviewer. A `document` proposal creates an unpublished blog-post draft
   from article markdown (a port of the article converter) and returns its uid; undo deletes it while never
-  published. New setting `CONTENTDB_ENRICHMENT_DOCUMENT_TYPE` (default `blog-post`). See `docs/enrichment-adapter.md`.
+  published nor edited. Text writes take strings only and an unknown `filter` key raises `ValueError`. New setting `CONTENTDB_ENRICHMENT_DOCUMENT_TYPE` (default `blog-post`). See `docs/enrichment-adapter.md`.
 
 ## 5.2.0 — 2026-10-12
 
