@@ -63,7 +63,10 @@ def read_text(content: Content, path: str) -> str:
 
 
 def write_text(content: Content, path: str, text: str) -> None:
-    """Set the string at `path`, keeping every other key of the JSON. A missing section/tile raises `ValueError`."""
+    """Set the string at `path`, keeping every other key of the JSON. A missing section/tile or a non-string value
+    raises `ValueError`."""
+    if not isinstance(text, str):
+        raise ValueError(f"{path!r} expects a string value")
     text = sanitize_content(text)
     if path == "name":
         _write_name(content, text)

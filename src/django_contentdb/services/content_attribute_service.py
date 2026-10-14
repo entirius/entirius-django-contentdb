@@ -84,9 +84,15 @@ def _links(content: Content, attribute: Attribute):
 def _values(attribute: Attribute, value: dict) -> list[AttributeValue]:
     kind = field_type(attribute)
     if kind == "text":
-        return _text_value(attribute, str(value.get("text") or ""))
+        return _text_value(attribute, _string(attribute, value.get("text")))
     requested = value.get("options") if kind == "multiselect" else [value.get("option")]
     return [_option(attribute, str(option)) for option in requested or [] if option not in (None, "")]
+
+
+def _string(attribute: Attribute, text) -> str:
+    if not isinstance(text, str):
+        raise ValueError(f"attribute {attribute.slug!r} expects a string value")
+    return text
 
 
 def _text_value(attribute: Attribute, text: str) -> list[AttributeValue]:

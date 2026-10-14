@@ -39,18 +39,26 @@ _ALLOWED_FILTERS = {"content_type": "content_type__slug", "language": "language_
 
 
 def resolve_targets(scope_spec: dict, page: int = 1) -> list[str]:
-    """`list` / `csv` echo a page of `refs`; `filter` pages the draft uids of a channel (optional `content_type`,
-    `language` filters)."""
+    """`list` echoes a page of `refs`; `filter` pages the draft uids of a channel (optional `content_type`,
+    `language` filters). An unknown filter key raises `ValueError` rather than widening the scope."""
     mode = scope_spec.get("mode")
     offset = (max(page, 1) - 1) * _PAGE_SIZE
-    if mode in ("list", "csv"):
+    if mode == "list":
         return list(scope_spec.get("refs", [])[offset : offset + _PAGE_SIZE])
     if mode != "filter":
         raise ValueError(f"unsupported scope mode for contentdb adapter: {mode!r}")
-    filters = scope_spec.get("filters") or {}
-    lookups = {_ALLOWED_FILTERS[key]: value for key, value in filters.items() if key in _ALLOWED_FILTERS}
-    drafts = Draft.objects.filter(channels__idx=scope_spec["channel"], **lookups).order_by("pk")
+    drafts = _filtered_drafts(scope_spec).order_by("pk")
     return [str(uid) for uid in drafts.values_list("content__uid", flat=True)[offset : offset + _PAGE_SIZE]]
+
+
+def _filtered_drafts(scope_spec: dict):
+    if not (channel := scope_spec.get("channel")):
+        raise ValueError("filter scope needs a channel")
+    filters = scope_spec.get("filters") or {}
+    if unknown := set(filters) - _ALLOWED_FILTERS.keys():
+        raise ValueError(f"unsupported contentdb filters: {sorted(unknown)}")
+    lookups = {_ALLOWED_FILTERS[key]: value for key, value in filters.items()}
+    return Draft.objects.filter(channels__idx=channel, **lookups)
 
 
 def find_gaps(check: str, params: dict, scope: dict) -> list:
@@ -79,7 +87,7 @@ def apply(proposal) -> dict | None:
 
 def revert(proposal) -> None:
     if proposal.target_kind != DOCUMENT_KIND:
-        _write(proposal, proposal.current_snapshot or {})
+        _write(proposal, proposal.current_snapshot or {"text": ""})
         return
     draft = Draft.objects.filter(content__uid=proposal.result_ref).first() if proposal.result_ref else None
     if draft is None:
@@ -94,7 +102,7 @@ def _write(proposal, value: dict) -> None:
     if path.startswith(ATTRIBUTE_PREFIX):
         content_attribute_service.write(content, _attribute(path), value)
     else:
-        content_path_service.write_text(content, path, str(value.get("text") or ""))
+        content_path_service.write_text(content, path, value.get("text"))
     _log(proposal, content, Action.UPDATE)
 
 
