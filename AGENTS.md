@@ -64,6 +64,11 @@ src/django_contentdb/
 │   ├── sync_service.py              #   sync_channels_from_pim(), sync_languages_from_pim()
 │   ├── author_service.py            #   CRUD + reassignment + set_draft_authors
 │   ├── content_service.py           #   sanitize_content(), sanitize_html() — stored page HTML allowlist
+│   ├── enrichment_adapter.py        #   enrichment bus adapter (fields by path, attributes, document create)
+│   ├── content_path_service.py      #   draft text fields by dotted path (read, merge-write, section/tile list)
+│   ├── content_attribute_service.py #   content-type attributes as select/multiselect/text fields
+│   ├── document_service.py          #   unpublished blog-post draft from an article document
+│   ├── article_converter.py         #   article markdown → blog-post payload (pure)
 │   └── navigation_service.py        #   get_published_navigation() (cached)
 │
 ├── api/                             # v2 API (Pydantic + drf-spectacular)
@@ -128,6 +133,7 @@ Layer rule: v1 views use DRF serializers directly (no service layer for CRUD). v
 | CMS builder config | `docs/cms-config.md` |
 | Management commands | `docs/commands.md` |
 | Testing, factories | `docs/testing.md` |
+| Enrichment adapter: field keys, writes, documents | `docs/enrichment-adapter.md` |
 
 ## Settings
 
@@ -137,6 +143,7 @@ Layer rule: v1 views use DRF serializers directly (no service layer for CRUD). v
 | `API_PUBLIC_BASE_URL` | `/api/` | Public API prefix |
 | `CONTENTDB_THUMBNAIL_QUALITY` | 60 | JPEG thumbnail quality |
 | `CONTENTDB_IMAGE_MAX_WIDTH` | 2560 | Max upload width (0 = no resize) |
+| `CONTENTDB_ENRICHMENT_DOCUMENT_TYPE` | `"blog-post"` | Content type of drafts the enrichment adapter creates |
 
 ## Gotchas
 

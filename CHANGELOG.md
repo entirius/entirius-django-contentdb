@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Enrichment adapter (`services/enrichment_adapter.py`, registered by the host as
+  `ENRICHMENT_ADAPTERS["contentdb"]`): the enrichment bus reads and writes draft fields by path (`name`, `meta.*`,
+  `extension.*`, section and tile texts) and content-type attributes (select, multiselect, text), with merge writes,
+  sanitising and an `ActivityLog` row as the reviewer. A `document` proposal creates an unpublished blog-post draft
+  from article markdown (a port of the article converter) and returns its uid; undo deletes it while never
+  published. New setting `CONTENTDB_ENRICHMENT_DOCUMENT_TYPE` (default `blog-post`). See `docs/enrichment-adapter.md`.
+
 ## 5.2.0 — 2026-10-12
 
 - Access: the module declares its own access areas on its AppConfig and its admin views (copied from the
