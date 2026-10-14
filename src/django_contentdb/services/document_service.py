@@ -10,6 +10,7 @@ payload comes from `article_converter.build_payload`; the route is the slug, suf
 """
 
 from django.db import transaction
+from django.db.models import F
 from slugify import slugify
 
 from django_contentdb.models import AccessRights, Content, ContentChannel, ContentType, Draft, Language, Route
@@ -32,6 +33,7 @@ def create_draft(value: dict, *, channel: str = "") -> Draft:
         meta=sanitize_content(payload["meta"]),
         extension=sanitize_content(payload["extension"]),
     )
+    _mark_unedited(content)
     draft = Draft.objects.create(
         content_type=content_type, content=content, name=payload["name"][:128], language=language
     )
@@ -43,14 +45,26 @@ def create_draft(value: dict, *, channel: str = "") -> Draft:
 
 @transaction.atomic
 def delete_draft(draft: Draft) -> None:
-    """Delete a draft that was never published (with routes only it uses); a published one raises `ValueError`."""
+    """Delete a draft that was never published nor edited (with routes only it uses); otherwise raise `ValueError`."""
     if draft.published.exists():
         raise ValueError("the draft has been published; unpublish it in the CMS before undoing its creation")
+    if _was_edited(draft.content):
+        raise ValueError("the draft was edited after it was created; delete it in the CMS")
     for route in draft.routes.all():
         if route.drafts.exclude(pk=draft.pk).exists():
             continue
         route.delete()
     draft.content.delete()
+
+
+def _mark_unedited(content: Content) -> None:
+    """Align `updated_at` with `created_at`: any later save of the content (a CMS edit) moves it past."""
+    Content.objects.filter(pk=content.pk).update(updated_at=F("created_at"))
+    content.updated_at = content.created_at
+
+
+def _was_edited(content: Content) -> bool:
+    return content.updated_at > content.created_at
 
 
 def unique_route(slug: str) -> str:

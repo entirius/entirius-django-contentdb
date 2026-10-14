@@ -58,14 +58,23 @@ class TestResolveTargets:
         assert adapter.resolve_targets({"mode": "list", "refs": refs}, page=2) == refs[100:]
 
     def test_filter_by_channel_and_content_type(self, blog_draft):
-        spec = {"mode": "filter", "channel": "web", "filters": {"content_type": "blog-post", "ignored": "x"}}
+        spec = {"mode": "filter", "channel": "web", "filters": {"content_type": "blog-post"}}
         assert adapter.resolve_targets(spec) == [str(blog_draft.content.uid)]
         spec["filters"] = {"content_type": "landing"}
         assert adapter.resolve_targets(spec) == []
 
-    def test_unknown_mode_raises(self):
+    def test_unknown_filter_raises(self, blog_draft):
+        with pytest.raises(ValueError, match="ignored"):
+            adapter.resolve_targets({"mode": "filter", "channel": "web", "filters": {"ignored": "x"}})
+
+    def test_filter_without_channel_raises(self):
+        with pytest.raises(ValueError, match="channel"):
+            adapter.resolve_targets({"mode": "filter", "filters": {}})
+
+    @pytest.mark.parametrize("mode", ["gap", "csv"])
+    def test_unknown_mode_raises(self, mode):
         with pytest.raises(ValueError):
-            adapter.resolve_targets({"mode": "gap"})
+            adapter.resolve_targets({"mode": mode, "refs": ["r1"]})
 
     def test_find_gaps_is_empty(self):
         assert adapter.find_gaps("any", {}, {"channel": "web"}) == []
@@ -121,6 +130,14 @@ class TestApply:
     def test_missing_section_raises(self, blog_draft):
         with pytest.raises(ValueError):
             adapter.apply(field_proposal(blog_draft, "content.sections.nope.title", {"text": "x"}))
+
+    @pytest.mark.parametrize("path", ["meta.title", "attributes.subtitle"])
+    @pytest.mark.parametrize("value", [{"text": {"a": 1}}, {}])
+    def test_non_string_text_raises(self, blog_draft, path, value):
+        before = read(blog_draft, path)
+        with pytest.raises(ValueError, match="string"):
+            adapter.apply(field_proposal(blog_draft, path, value))
+        assert read(blog_draft, path) == before
 
     def test_unknown_option_raises(self, blog_draft):
         with pytest.raises(ValueError):
@@ -269,6 +286,16 @@ class TestDocument:
         with pytest.raises(ValueError):
             adapter.revert(proposal)
         assert Draft.objects.filter(pk=draft.pk).exists()
+
+    def test_revert_refuses_an_edited_draft(self, blog_setup):
+        proposal = document_proposal()
+        proposal.result_ref = adapter.apply(proposal)["subject_ref"]
+        content = Content.objects.get(uid=proposal.result_ref)
+        content.meta["title"] = "Reworked in the CMS"
+        content.save()
+        with pytest.raises(ValueError, match="edited"):
+            adapter.revert(proposal)
+        assert Draft.objects.filter(content=content).exists()
 
     def test_revert_of_a_missing_draft_is_a_no_op(self, blog_setup):
         proposal = document_proposal()
