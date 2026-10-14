@@ -4,13 +4,27 @@
 
 """The enrichment adapter conformance kit run against the ContentDB adapter.
 
-django-enrichment is not a dependency of this module: the kit runs where it is importable (the zeno dev venv) and
-the file is skipped elsewhere.
+django-enrichment is not a dependency of this module yet (the kit ships after entirius-django-enrichment 2.2.0): the
+kit runs where it is importable (the zeno dev venv) and the file is skipped elsewhere. Set
+`CONTENTDB_REQUIRE_CONFORMANCE=1` to turn a missing kit into a failure instead of a skip.
 """
+
+import importlib
+import os
 
 import pytest
 
-kit = pytest.importorskip("django_enrichment.testing.adapter_conformance")
+
+def _load_kit():
+    try:
+        return importlib.import_module("django_enrichment.testing.adapter_conformance")
+    except ImportError:
+        if os.environ.get("CONTENTDB_REQUIRE_CONFORMANCE") == "1":
+            raise
+        pytest.skip("enrichment conformance kit not installed", allow_module_level=True)
+
+
+kit = _load_kit()
 
 from django_contentdb.services import enrichment_adapter  # noqa: E402
 
