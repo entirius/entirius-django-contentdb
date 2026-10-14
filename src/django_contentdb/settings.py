@@ -10,3 +10,6 @@ PUBLIC_BASE_URL = getattr(settings, "API_PUBLIC_BASE_URL", "/api/").strip("/")
 THUMBNAIL_QUALITY = getattr(settings, "CONTENTDB_THUMBNAIL_QUALITY", 60)
 
 CONTENTDB_IMAGE_MAX_WIDTH = getattr(settings, "CONTENTDB_IMAGE_MAX_WIDTH", 2560)
+
+# Content type of the drafts the enrichment adapter creates from a `document` proposal.
+ENRICHMENT_DOCUMENT_TYPE = getattr(settings, "CONTENTDB_ENRICHMENT_DOCUMENT_TYPE", "blog-post")
