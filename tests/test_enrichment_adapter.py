@@ -284,6 +284,14 @@ class TestBuildContext:
         assert len(json.dumps(context, ensure_ascii=False)) <= adapter.CONTEXT_MAX_CHARS
         assert context["text"].endswith("…")
 
+    def test_fixed_fields_over_the_cap_do_not_loop(self, blog_draft):
+        content = blog_draft.content
+        # JSON escapes \x01 as \u0001: six times longer than the field caps count, over the limit with no text at all
+        content.meta = {"title": "\x01" * 300, "description": "\x01" * 300}
+        content.save()
+        context = adapter.build_context(subject_ref=str(content.uid), channel="web", language="en")
+        assert context["text"] == ""
+
 
 class TestDocument:
     def test_creates_an_unpublished_blog_post(self, blog_draft, admin_user):

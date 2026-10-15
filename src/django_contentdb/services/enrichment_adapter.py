@@ -196,7 +196,7 @@ def build_context(*, subject_ref: str, channel: str, language: str) -> dict:
         "text": "",
     }
     context["text"] = _page_text(content)
-    while (overflow := len(json.dumps(context, ensure_ascii=False)) - CONTEXT_MAX_CHARS) > 0:
+    while context["text"] and (overflow := len(json.dumps(context, ensure_ascii=False)) - CONTEXT_MAX_CHARS) > 0:
         context["text"] = _cap(context["text"], len(context["text"]) - overflow)
     return context
 
