@@ -11,13 +11,15 @@ Conventions (opaque to the bus):
 
 - `subject_ref`     = the draft's content uid (the uid the v1 draft API shows)
 - `target_kind`     = `"attribute_value"` (a field of the draft) | `"document"` (create a new draft)
-- `target_locator`  = `{"path": <field key>}` (field) | `{"channel": <idx or "">}` (document)
+- `target_locator`  = `{"path": <field key>, "language": <iso2>}` (field; `language` optional) | `{"channel": <idx or "">}`
+                      (document)
 - `proposed_value`  = `{"text"}` (text path / text attribute) | `{"option"}` / `{"options"}` (select attributes)
                     | the document `{language, title, slug, body_markdown, meta, faq}` (document)
 - `current_snapshot`= the same shape as the value, read raw from the draft; `{}` for a document
 
 Field keys are paths (`content_path_service`) or `attributes.<slug>` (`content_attribute_service`). A draft has one
-language, so the locator carries none. A document `apply` returns `{"subject_ref": <new uid>}`; its `revert`
+language: a locator that names another one is refused (`ValueError`) by `read_current` / `apply` / `revert`, so a
+multi-language `write` run cannot put one language's text on a draft of another. A document `apply` returns `{"subject_ref": <new uid>}`; its `revert`
 deletes that draft (`proposal.result_ref`) only while it was never published.
 """
 
@@ -70,7 +72,7 @@ def read_current(*, subject_ref: str, target_kind: str, target_locator: dict) ->
     if target_kind == DOCUMENT_KIND:
         return {}
     path = target_locator["path"]
-    content = _content(subject_ref)
+    content = _content(subject_ref, target_locator)
     if path.startswith(ATTRIBUTE_PREFIX):
         return content_attribute_service.read(content, _attribute(path))
     return {"text": content_path_service.read_text(content, path)}
@@ -98,7 +100,7 @@ def revert(proposal) -> None:
 
 def _write(proposal, value: dict) -> None:
     path = proposal.target_locator["path"]
-    content = _content(proposal.subject_ref)
+    content = _content(proposal.subject_ref, proposal.target_locator)
     if path.startswith(ATTRIBUTE_PREFIX):
         content_attribute_service.write(content, _attribute(path), value)
     else:
@@ -116,14 +118,25 @@ def _channel(proposal) -> str:
     return (proposal.target_locator or {}).get("channel") or ""
 
 
-def _content(subject_ref: str) -> Content:
+def _content(subject_ref: str, locator: dict | None = None) -> Content:
     try:
-        content = Content.objects.select_related("draft__content_type__attribute_set").filter(uid=subject_ref).first()
+        content = (
+            Content.objects.select_related("draft__content_type__attribute_set", "draft__language")
+            .filter(uid=subject_ref)
+            .first()
+        )
     except ValidationError:
         content = None
     if content is None or not hasattr(content, "draft"):
         raise ValueError(f"draft {subject_ref!r} not found")
+    _check_language(content, (locator or {}).get("language"))
     return content
+
+
+def _check_language(content: Content, language: str | None) -> None:
+    draft_language = content.draft.language.iso2.lower()
+    if language and language.lower() != draft_language:
+        raise ValueError(f"draft {content.uid} is in {draft_language!r}, not {language!r}")
 
 
 def _attribute(path: str):
@@ -151,12 +164,13 @@ def channel_languages(*, channel: str) -> list[str]:
 
 
 def make_locator(*, field_key: str, channel: str, language: str | None) -> dict:
-    """`{"path": field_key}` — a draft has one language and belongs to its channels already."""
+    """`{"path": field_key, "language": language}` — the draft's channels need no key; the language is checked
+    against the draft's own on read and write. A language-less call (`pick`) gives `{"path": field_key}`."""
     if field_key.startswith(ATTRIBUTE_PREFIX):
         _attribute(field_key)
     elif not content_path_service.is_text_path(field_key):
         raise ValueError(f"unknown contentdb field {field_key!r}")
-    return {"path": field_key}
+    return {"path": field_key, "language": language.lower()} if language else {"path": field_key}
 
 
 def field_key(*, locator: dict) -> str | None:

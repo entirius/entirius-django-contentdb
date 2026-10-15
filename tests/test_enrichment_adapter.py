@@ -213,13 +213,56 @@ class TestCatalog:
         assert adapter.channel_languages(channel="web") == ["en", "pl"]
 
     def test_make_locator_and_field_key(self, blog_setup):
-        locator = adapter.make_locator(field_key="content.tiles.t-1.title", channel="web", language="en")
-        assert locator == {"path": "content.tiles.t-1.title"}
+        locator = adapter.make_locator(field_key="content.tiles.t-1.title", channel="web", language="EN")
+        assert locator == {"path": "content.tiles.t-1.title", "language": "en"}
+        assert adapter.make_locator(field_key="attributes.topic", channel="web", language=None) == {
+            "path": "attributes.topic"
+        }
         assert adapter.field_key(locator=locator) == "content.tiles.t-1.title"
         with pytest.raises(ValueError):
             adapter.make_locator(field_key="meta.robots", channel="web", language="en")
         with pytest.raises(ValueError):
             adapter.make_locator(field_key="attributes.unknown", channel="web", language=None)
+
+
+class TestWriteLanguages:
+    """The `write` kind asks for one locator per field × language; only the draft's own language may land."""
+
+    def _proposals(self, draft, languages):
+        locators = [adapter.make_locator(field_key="meta.title", channel="web", language=lang) for lang in languages]
+        return [
+            SimpleNamespace(
+                subject_ref=str(draft.content.uid),
+                target_kind="attribute_value",
+                target_locator=locator,
+                proposed_value={"text": f"Title in {locator['language']}"},
+                current_snapshot={},
+                reviewed_by=None,
+            )
+            for locator in locators
+        ]
+
+    def test_two_languages_get_distinct_locators(self, blog_draft):
+        english, polish = self._proposals(blog_draft, ["en", "pl"])
+        assert english.target_locator != polish.target_locator
+
+    def test_only_the_draft_language_reads_and_applies(self, blog_draft):
+        english, polish = self._proposals(blog_draft, ["en", "pl"])
+        adapter.read_current(
+            subject_ref=english.subject_ref, target_kind="attribute_value", target_locator=english.target_locator
+        )
+        adapter.apply(english)
+        with pytest.raises(ValueError, match="not 'pl'"):
+            adapter.read_current(
+                subject_ref=polish.subject_ref, target_kind="attribute_value", target_locator=polish.target_locator
+            )
+        with pytest.raises(ValueError, match="not 'pl'"):
+            adapter.apply(polish)
+        assert read(blog_draft, "meta.title") == {"text": "Title in en"}
+
+    def test_language_less_locator_still_works(self, blog_draft):
+        adapter.apply(field_proposal(blog_draft, "meta.title", {"text": "Plain"}))
+        assert read(blog_draft, "meta.title") == {"text": "Plain"}
 
 
 class TestBuildContext:
