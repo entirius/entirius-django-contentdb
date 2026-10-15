@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Enrichment: gallery images are subjects of the adapter (`image:<uid>`) — the source picture of the AI image kind
+  (`list_pictures`, `picture`, `subject_labels`, a named `build_context`) and the target of its results: Apply adds a
+  new image tagged `ai` ("<original> · packshot", linked to the original in `meta.source_image`) or replaces the
+  original's file (`apply_modes`); undo deletes the added image or restores the old file. No video (the gallery
+  stores images only). See `docs/enrichment-adapter.md` § Gallery images.
+- Fix: `optimize_image` saved the thumbnail from a raw file object and failed (logged, no thumbnail); it now wraps it
+  in a Django `File`, so uploads get their optimised thumbnail again.
 - Enrichment adapter (`services/enrichment_adapter.py`, registered by the host as
   `ENRICHMENT_ADAPTERS["contentdb"]`): the enrichment bus reads and writes draft fields by path (`name`, `meta.*`,
   `extension.*`, section and tile texts) and content-type attributes (select, multiselect, text), with merge writes,

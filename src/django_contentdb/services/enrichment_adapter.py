@@ -22,6 +22,11 @@ language: a locator that names another one is refused (`ValueError`) by `read_cu
 multi-language `write` run cannot put one language's text on a draft of another; `subject_languages` lets the
 bus skip those languages before any AI call. A document `apply` returns `{"subject_ref": <new uid>}`; its `revert`
 deletes that draft (`proposal.result_ref`) only while it was never published.
+
+Gallery images (`subject_ref` = `image:<uid>`) are the source and the target of the `image` kind
+(`media_enrichment_service`): `list_pictures` / `picture` give the image itself, a `picture` proposal (locator
+`{channel, source_picture_ref, operation, variant}`) is added as a new gallery image or replaces the original's file
+(`apply_modes`). Images belong to no channel; video is not supported (the gallery stores images only).
 """
 
 import json
@@ -31,9 +36,15 @@ from django.utils.html import strip_tags
 
 from django_contentdb.enums import Action
 from django_contentdb.models import ActivityLog, Content, ContentChannel, Draft, Language
-from django_contentdb.services import content_attribute_service, content_path_service, document_service
+from django_contentdb.services import (
+    content_attribute_service,
+    content_path_service,
+    document_service,
+    media_enrichment_service,
+)
 
 DOCUMENT_KIND = "document"
+PICTURE_KIND = "picture"
 ATTRIBUTE_PREFIX = "attributes."
 CONTEXT_MAX_CHARS = 3000
 _PAGE_SIZE = 100
@@ -72,6 +83,8 @@ def find_gaps(check: str, params: dict, scope: dict) -> list:
 def read_current(*, subject_ref: str, target_kind: str, target_locator: dict) -> dict:
     if target_kind == DOCUMENT_KIND:
         return {}
+    if target_kind == PICTURE_KIND:
+        return media_enrichment_service.snapshot(subject_ref)
     path = target_locator["path"]
     content = _content(subject_ref, target_locator)
     if path.startswith(ATTRIBUTE_PREFIX):
@@ -80,6 +93,8 @@ def read_current(*, subject_ref: str, target_kind: str, target_locator: dict) ->
 
 
 def apply(proposal) -> dict | None:
+    if proposal.target_kind == PICTURE_KIND:
+        return media_enrichment_service.apply_derived(proposal)
     if proposal.target_kind == DOCUMENT_KIND:
         draft = document_service.create_draft(proposal.proposed_value, channel=_channel(proposal))
         _log(proposal, draft.content, Action.CREATE)
@@ -88,7 +103,17 @@ def apply(proposal) -> dict | None:
     return None
 
 
+def apply_modes(*, target_kind: str, target_locator: dict) -> list[str]:
+    """A processed gallery image can be added next to the original or replace it; other targets have one way."""
+    if target_kind == PICTURE_KIND and target_locator.get("source_picture_ref"):
+        return [media_enrichment_service.MODE_ADD, media_enrichment_service.MODE_REPLACE]
+    return []
+
+
 def revert(proposal) -> None:
+    if proposal.target_kind == PICTURE_KIND:
+        media_enrichment_service.revert_derived(proposal)
+        return
     if proposal.target_kind != DOCUMENT_KIND:
         _write(proposal, proposal.current_snapshot or {"text": ""})
         return
@@ -184,7 +209,9 @@ def field_key(*, locator: dict) -> str | None:
 
 
 def build_context(*, subject_ref: str, channel: str, language: str) -> dict:
-    """Plain-text facts of the draft for an AI prompt, at most `CONTEXT_MAX_CHARS` as JSON."""
+    """Plain-text facts of the draft (or the gallery image) for an AI prompt, at most `CONTEXT_MAX_CHARS` as JSON."""
+    if media_enrichment_service.is_image_subject(subject_ref):
+        return media_enrichment_service.context(subject_ref)
     content = _content(subject_ref)
     context = {
         "uid": str(content.uid),
@@ -215,3 +242,18 @@ def _cap(text: str, limit: int) -> str:
     if limit <= 0:
         return ""
     return text if len(text) <= limit else f"{text[: limit - 1].rstrip()}…"
+
+
+def subject_labels(*, refs: list[str], channel: str) -> dict[str, str]:
+    """`{ref: label}` of the gallery images (`image:<uid>`) among `refs` that exist; other refs are left out."""
+    return media_enrichment_service.labels(refs)
+
+
+def list_pictures(*, subject_ref: str, channel: str) -> list[dict]:
+    """A gallery image is its own one picture (`Image.DoesNotExist` for an unknown one)."""
+    return media_enrichment_service.pictures(subject_ref)
+
+
+def picture(*, subject_ref: str, channel: str, picture_ref: str) -> tuple[bytes, str]:
+    """Bytes + mime of the gallery image; `LookupError` when `picture_ref` is another image."""
+    return media_enrichment_service.picture_bytes(subject_ref, picture_ref)

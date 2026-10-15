@@ -65,6 +65,7 @@ src/django_contentdb/
 │   ├── author_service.py            #   CRUD + reassignment + set_draft_authors
 │   ├── content_service.py           #   sanitize_content(), sanitize_html() — stored page HTML allowlist
 │   ├── enrichment_adapter.py        #   enrichment bus adapter (fields by path, attributes, document create)
+│   ├── media_enrichment_service.py  #   gallery images as enrichment subjects (source picture, add / replace)
 │   ├── content_path_service.py      #   draft text fields by dotted path (read, merge-write, section/tile list)
 │   ├── content_attribute_service.py #   content-type attributes as select/multiselect/text fields
 │   ├── document_service.py          #   unpublished blog-post draft from an article document
@@ -133,7 +134,7 @@ Layer rule: v1 views use DRF serializers directly (no service layer for CRUD). v
 | CMS builder config | `docs/cms-config.md` |
 | Management commands | `docs/commands.md` |
 | Testing, factories | `docs/testing.md` |
-| Enrichment adapter: field keys, writes, documents | `docs/enrichment-adapter.md` |
+| Enrichment adapter: field keys, writes, documents, gallery images | `docs/enrichment-adapter.md` |
 
 ## Settings
 

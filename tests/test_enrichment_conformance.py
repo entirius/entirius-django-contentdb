@@ -9,10 +9,15 @@ kit runs where it is importable (the zeno dev venv) and the file is skipped else
 `CONTENTDB_REQUIRE_CONFORMANCE=1` to turn a missing kit into a failure instead of a skip.
 """
 
+import hashlib
 import importlib
 import os
 
 import pytest
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+
+from tests.conftest import png
 
 
 def _load_kit():
@@ -80,3 +85,65 @@ def document_case(blog_setup):
 
 class TestContentdbConformance(kit.AdapterConformance, kit.FieldCatalogConformance, kit.DocumentCreateConformance):
     pass
+
+
+# --- gallery images: a processed copy replaces the image's file; the bus stages the binary, a stand-in does it here --
+
+
+class _ReplaceBus:
+    """The ContentDB adapter plus what `apply_service` does around a picture apply in `replace` mode: stage the next
+    payload as the proposal's binary. `read_current` is compared by the file's content (the stored name is a hash plus
+    a storage suffix), and each content maps back to the real snapshot the adapter's undo reads."""
+
+    def __init__(self, payloads: list[bytes]):
+        self._payloads = payloads
+        self._snapshots: dict[str, dict] = {}
+
+    def __getattr__(self, name: str):
+        return getattr(enrichment_adapter, name)
+
+    def read_current(self, **kwargs) -> dict:
+        real = enrichment_adapter.read_current(**kwargs)
+        digest = _digest_of(real["file"])
+        self._snapshots[digest] = real
+        return {"ref": real["ref"], "sha256": digest}
+
+    def apply(self, proposal) -> None:
+        staged = ContentFile(self._payloads.pop(0), name="image-1.png")
+        proposal.open_staged_file = lambda: staged
+        proposal.apply_mode = "replace"
+        proposal.current_snapshot = self._real(proposal.current_snapshot)
+        enrichment_adapter.apply(proposal)
+
+    def revert(self, proposal) -> None:
+        proposal.current_snapshot = self._real(proposal.current_snapshot)
+        enrichment_adapter.revert(proposal)
+
+    def _real(self, snapshot: dict) -> dict:
+        return self._snapshots.get((snapshot or {}).get("sha256"), snapshot)
+
+
+def _digest_of(name: str) -> str:
+    with default_storage.open(name, "rb") as handle:
+        return hashlib.sha256(handle.read()).hexdigest()
+
+
+_PICTURE_PAYLOADS = [png("white"), png("blue")]
+
+
+class TestContentdbPictureConformance(kit.AdapterConformance):
+    @pytest.fixture
+    def adapter(self):
+        return _ReplaceBus(list(_PICTURE_PAYLOADS))
+
+    @pytest.fixture
+    def conformance_case(self, gallery_image):
+        uid = str(gallery_image.uid)
+        white, blue = (hashlib.sha256(payload).hexdigest() for payload in _PICTURE_PAYLOADS)
+        return kit.ConformanceCase(
+            subject_ref=f"image:{uid}",
+            target_kind="picture",
+            target_locator={"channel": "media", "source_picture_ref": uid, "operation": "packshot", "variant": 1},
+            value={"ref": uid, "sha256": white},
+            other_value={"ref": uid, "sha256": blue},
+        )

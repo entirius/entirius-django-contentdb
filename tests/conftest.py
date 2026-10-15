@@ -2,10 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import io
 from types import SimpleNamespace
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
+from PIL import Image as PilImage
 from rest_framework.test import APIClient
 
 from django_contentdb.models import (
@@ -16,6 +19,7 @@ from django_contentdb.models import (
     ContentChannel,
     ContentType,
     Draft,
+    Image,
     Language,
     Route,
 )
@@ -84,3 +88,26 @@ def blog_draft(blog_setup):
     draft.channels.add(blog_setup.channel)
     Route.objects.create(url="first-post").drafts.add(draft)
     return draft
+
+
+def png(color: str) -> bytes:
+    """A small PNG of one colour — different colours give different files."""
+    buffer = io.BytesIO()
+    PilImage.new("RGB", (8, 6), color).save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+@pytest.fixture
+def media_root(settings, tmp_path):
+    """Image files and thumbnail scratch space under the test's own directory."""
+    settings.MEDIA_ROOT = str(tmp_path / "media")
+    settings.TMP_DIR = str(tmp_path / "tmp")
+    return tmp_path
+
+
+@pytest.fixture
+def gallery_image(db, media_root):
+    """A gallery image `mug.png` (red) with an alt text."""
+    image = Image.objects.create(meta={"fileName": "mug.png", "alt": "A red mug"})
+    image.image.save("mug.png", ContentFile(png("red")), save=True)
+    return image

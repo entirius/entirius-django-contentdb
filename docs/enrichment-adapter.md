@@ -74,6 +74,27 @@ published, or edited after it was created (its content saved again, e.g. in the 
 raises `ValueError`. `create_draft` aligns the content's `updated_at` with `created_at`, so any later save counts
 as an edit.
 
+## Gallery images
+
+A gallery `Image` is a subject too: `subject_ref` = `image:<uid>` (`services/media_enrichment_service.py`). It is the
+source of the enrichment `image` kind (packshot, lifestyle, enhance, own instruction) and the place its results land.
+Images belong to no channel: the channel the bus passes is ignored.
+
+- `list_pictures` gives the image as its own one picture (marked main); `picture` reads its bytes and mime and
+  refuses (`LookupError`) a `picture_ref` that is another image. An unknown image raises `Image.DoesNotExist`.
+- `subject_labels` returns `{ref: file name}` of the `image:<uid>` refs that exist (other refs are left out);
+  `build_context` gives uid, name, alt text and tags, so a review card is named after the file.
+- A `picture` proposal (locator `{channel, source_picture_ref, operation, variant}`) offers two ways
+  (`apply_modes` → `["add", "replace"]`): `add` (the default, and what a bulk accept does) makes a new gallery image
+  tagged `ai`, named "<original name> · packshot" (`enhanced`, `edited`, …; numbered when a run made several), with
+  the original's alt text and `meta.source_image` = the original's uid, and returns `{"ref": <its uid>}` — undo
+  deletes it. `replace` saves the new file on the same image; the old file stays on disk and is the undo anchor
+  (`current_snapshot.file`); undo puts it back, or raises `ValueError` when it is gone. Both rebuild the thumbnail.
+- `read_current` of a picture is the original's `{ref, file, url}` — the review shows `url` as "before", and a file
+  replaced since is drift.
+- Video is not supported: the gallery stores images only (`HashedImageField`), so there is no video worker for
+  ContentDB.
+
 ## Other callables
 
 - `resolve_targets`: `list` pages the `refs` (the bus parses `csv` itself); `filter` pages the draft uids of
@@ -88,8 +109,8 @@ as an edit.
 
 ## Tests
 
-`tests/test_enrichment_adapter.py` covers every callable; `tests/test_article_converter.py` checks the converter
+`tests/test_enrichment_adapter.py` covers every callable, `tests/test_media_enrichment.py` the gallery images; `tests/test_article_converter.py` checks the converter
 against golden files produced by the original converter; `tests/test_enrichment_conformance.py` runs the
-enrichment conformance kit and is skipped where `django_enrichment` is not installed; `tests/test_enrichment_write.py`
+enrichment conformance kit (draft fields, documents, and a gallery image replaced and restored) and is skipped where `django_enrichment` is not installed; `tests/test_enrichment_write.py`
 runs the bus's `write` kind on a draft and needs the bus's runtime too (`make module-test
 MODULE=entirius-django-contentdb` in zeno), skipped elsewhere.
