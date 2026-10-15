@@ -80,6 +80,8 @@ as an edit.
   `channel` (filters `content_type`, `language`). A missing channel or an unknown filter key raises `ValueError`.
 - `find_gaps`: no checks yet, always `[]`.
 - `channel_languages`: the channel's default language first, then the other languages of its drafts.
+- `subject_languages`: the draft's own language (lowercase iso2), so a `write` over `["*"]` writes only that one
+  and skips the others without an AI call or a failed subject.
 - `make_locator` / `field_key`: `{"path": key}` and back; an unknown key raises `ValueError`.
 - `build_context`: uid, content type, name, route, SEO title/description and the page text as plain text, at most
   3000 characters as JSON.
@@ -88,4 +90,6 @@ as an edit.
 
 `tests/test_enrichment_adapter.py` covers every callable; `tests/test_article_converter.py` checks the converter
 against golden files produced by the original converter; `tests/test_enrichment_conformance.py` runs the
-enrichment conformance kit and is skipped where `django_enrichment` is not installed.
+enrichment conformance kit and is skipped where `django_enrichment` is not installed; `tests/test_enrichment_write.py`
+runs the bus's `write` kind on a draft and needs the bus's runtime too (`make module-test
+MODULE=entirius-django-contentdb` in zeno), skipped elsewhere.

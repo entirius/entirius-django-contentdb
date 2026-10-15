@@ -19,7 +19,8 @@ Conventions (opaque to the bus):
 
 Field keys are paths (`content_path_service`) or `attributes.<slug>` (`content_attribute_service`). A draft has one
 language: a locator that names another one is refused (`ValueError`) by `read_current` / `apply` / `revert`, so a
-multi-language `write` run cannot put one language's text on a draft of another. A document `apply` returns `{"subject_ref": <new uid>}`; its `revert`
+multi-language `write` run cannot put one language's text on a draft of another; `subject_languages` lets the
+bus skip those languages before any AI call. A document `apply` returns `{"subject_ref": <new uid>}`; its `revert`
 deletes that draft (`proposal.result_ref`) only while it was never published.
 """
 
@@ -161,6 +162,11 @@ def channel_languages(*, channel: str) -> list[str]:
     used = Language.objects.filter(draft__channels=record).values_list("iso2", flat=True).distinct()
     others = sorted({iso2.lower() for iso2 in used} - {main})
     return [main, *others] if main else others
+
+
+def subject_languages(*, subject_ref: str) -> list[str]:
+    """The draft's one language (lowercase iso2): a `write` over every channel language skips the others."""
+    return [_content(subject_ref).draft.language.iso2.lower()]
 
 
 def make_locator(*, field_key: str, channel: str, language: str | None) -> dict:

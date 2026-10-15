@@ -260,6 +260,9 @@ class TestWriteLanguages:
             adapter.apply(polish)
         assert read(blog_draft, "meta.title") == {"text": "Title in en"}
 
+    def test_subject_languages_is_the_draft_language(self, blog_draft):
+        assert adapter.subject_languages(subject_ref=str(blog_draft.content.uid)) == ["en"]
+
     def test_language_less_locator_still_works(self, blog_draft):
         adapter.apply(field_proposal(blog_draft, "meta.title", {"text": "Plain"}))
         assert read(blog_draft, "meta.title") == {"text": "Plain"}

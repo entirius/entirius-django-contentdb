@@ -29,6 +29,10 @@ INSTALLED_APPS = [
 # django_access when importable (zeno): tests/test_access_ownership.py proves the access declarations.
 if find_spec("django_access"):
     INSTALLED_APPS.append("django_access")
+# django_enrichment with its runtime (zeno service venv): tests/test_enrichment_write.py runs the bus's `write` kind.
+ENRICHMENT_RUNNABLE = all(find_spec(name) for name in ("django_enrichment", "nh3", "respx", "django_utils.toolbox"))
+if ENRICHMENT_RUNNABLE:
+    INSTALLED_APPS.append("django_enrichment")
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
