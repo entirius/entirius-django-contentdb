@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+## 5.3.0rc1 — 2026-10-16
 - Enrichment: gallery images are subjects of the adapter (`image:<uid>`) — the source picture of the AI image kind
   (`list_pictures`, `picture`, `subject_labels`, a named `build_context`) and the target of its results: Apply adds a
   new image tagged `ai` ("<original> · packshot", linked to the original in `meta.source_image`) or replaces the
