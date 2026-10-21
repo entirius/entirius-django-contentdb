@@ -6,10 +6,12 @@ import json
 from types import SimpleNamespace
 
 import pytest
+from django.core.files.base import ContentFile
 
 from django_contentdb.enums import Action
-from django_contentdb.models import ActivityLog, Content, Draft, Published, Route
+from django_contentdb.models import ActivityLog, Content, Draft, Image, Published, Route
 from django_contentdb.services import enrichment_adapter as adapter
+from tests.conftest import png
 
 pytestmark = pytest.mark.django_db
 
@@ -44,6 +46,14 @@ def document_proposal(channel="web", reviewer=None, value=None):
         result_ref="",
         reviewed_by=reviewer,
     )
+
+
+def covered_proposal():
+    value = {**DOCUMENT, "cover": {"alt": "A workshop bench at dawn", "file_name": "field-notes-cover.png"}}
+    proposal = document_proposal(value=value)
+    proposal.staged_file = "staged/cover.png"
+    proposal.open_staged_file = lambda: ContentFile(png("white"), name="field-notes-cover.png")
+    return proposal
 
 
 def read(draft, path):
@@ -350,6 +360,27 @@ class TestDocument:
         with pytest.raises(ValueError, match="edited"):
             adapter.revert(proposal)
         assert Draft.objects.filter(content=content).exists()
+
+    def test_a_staged_cover_becomes_the_blog_tile_image_and_the_og_image(self, blog_setup, media_root):
+        content = Content.objects.get(uid=adapter.apply(covered_proposal())["subject_ref"])
+        images = content.extension["images_set"]
+        image = Image.objects.get(uid=images["desktop"]["uid"])
+        assert images["mobile"]["uid"] == images["desktop"]["uid"]
+        assert image.meta == {"alt": "A workshop bench at dawn", "fileName": "field-notes-cover.png"}
+        assert list(image.tags.values_list("slug", flat=True)) == ["ai"]
+        assert images["desktop"]["image"] == image.image.url and images["desktop"]["meta"]["alt"]
+        assert content.meta["og_image"] == image.image.url
+
+    def test_without_a_staged_cover_the_tile_has_no_image(self, blog_setup):
+        content = Content.objects.get(uid=adapter.apply(document_proposal())["subject_ref"])
+        assert content.extension["images_set"] == {} and content.meta["og_image"] == ""
+
+    def test_revert_deletes_the_cover_with_the_draft(self, blog_setup, media_root):
+        proposal = covered_proposal()
+        proposal.result_ref = adapter.apply(proposal)["subject_ref"]
+        uid = Content.objects.get(uid=proposal.result_ref).extension["images_set"]["desktop"]["uid"]
+        adapter.revert(proposal)
+        assert not Image.objects.filter(uid=uid).exists()
 
     def test_revert_of_a_missing_draft_is_a_no_op(self, blog_setup):
         proposal = document_proposal()

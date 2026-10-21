@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Enrichment: a `document` proposal with a staged picture carries its cover (`cover: {alt, file_name}`): Apply adds it
+  to the gallery (tag `ai`), puts it in the blog tile (`extension.images_set`, desktop and mobile) and sets
+  `meta.og_image`; undo deletes the image with the draft. `article_converter.build_payload(cover=...)`.
 - Enrichment: gallery images are subjects of the adapter (`image:<uid>`) — the source picture of the AI image kind
   (`list_pictures`, `picture`, `subject_labels`, a named `build_context`) and the target of its results: Apply adds a
   new image tagged `ai` ("<original> · packshot", linked to the original in `meta.source_image`) or replaces the

@@ -8,6 +8,9 @@ An image is its own one picture (`list_pictures` → itself, marked main). A pro
 locator `source_picture_ref` = the image's uid) is applied either as a new gallery image (`add`: tag `ai`, name
 "<original> · <operation>", `meta.source_image` = the original's uid) or as the new file of the original (`replace`:
 the old file stays on disk as the undo anchor). Images belong to no channel: the channel argument is ignored.
+
+A document proposal's staged picture is its cover: `add_cover` makes it a gallery image (tag `ai`), `images_set`
+gives the shape a page's tile stores.
 """
 
 import io
@@ -101,9 +104,42 @@ def apply_derived(proposal) -> dict | None:
         return None
     added = Image.objects.create(meta=_derived_meta(source, proposal.proposed_value or {}))
     _set_file(added, proposal)
-    tag, _ = ImageTag.objects.get_or_create(slug=AI_TAG["slug"], defaults={"label": AI_TAG["label"]})
-    added.tags.add(tag)
+    _tag_ai(added)
     return {"ref": str(added.uid)}
+
+
+def add_cover(proposal, cover: dict) -> Image:
+    """A new gallery image from the staged cover of a document proposal; alt and file name from `cover`."""
+    image = Image.objects.create(
+        meta={"alt": str(cover.get("alt") or ""), "fileName": cover.get("file_name") or "cover"}
+    )
+    _set_file(image, proposal)
+    _tag_ai(image)
+    return image
+
+
+def images_set(image: Image) -> dict:
+    """`{desktop, mobile}` of a page or tile, both the one image (the shape the CMS stores)."""
+    entry = {
+        "set": [{"source": t.image.url, "width": t.width, "height": t.height} for t in image.thumbnails.all()],
+        "uid": str(image.uid),
+        "meta": image.meta or {},
+        "image": image.image.url,
+        "width": image.width,
+        "height": image.height,
+    }
+    return {"desktop": entry, "mobile": dict(entry)}
+
+
+def delete_cover(images: dict) -> None:
+    """Delete the gallery image an `images_set` names (a document's cover, on undo)."""
+    if uid := _uid_or_none(str(((images or {}).get("desktop") or {}).get("uid") or "")):
+        Image.objects.filter(uid=uid).delete()
+
+
+def _tag_ai(image: Image) -> None:
+    tag, _ = ImageTag.objects.get_or_create(slug=AI_TAG["slug"], defaults={"label": AI_TAG["label"]})
+    image.tags.add(tag)
 
 
 def revert_derived(proposal) -> None:
