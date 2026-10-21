@@ -67,7 +67,10 @@ belongs to the draft's content type.
   `section-faq` from the `## FAQ` block, SEO meta and the blog header; the `faq` list is appended as a `## FAQ`
   block unless the body already has one;
 - language by iso2 (unknown → `ValueError`), public access rights, the locator's channel;
-- route = the slugified `slug` (or title), suffixed `-2`, `-3`, … when taken.
+- route = the slugified `slug` (or title), suffixed `-2`, `-3`, … when taken;
+- a proposal with a staged picture (the bus's `compose` with a cover, value `cover: {alt, file_name}`) adds it to the
+  gallery (tag `ai`, `meta.alt` / `meta.fileName`), stores it as the blog tile's `extension.images_set` (`desktop` and
+  `mobile`, the shape the CMS writes) and sets `meta.og_image` to its URL; `revert` deletes that image with the draft.
 
 `revert` deletes the created draft (`proposal.result_ref`) and the routes only it uses. A draft that has been
 published, or edited after it was created (its content saved again, e.g. in the CMS), is never deleted: `revert`

@@ -14,14 +14,16 @@ Conventions (opaque to the bus):
 - `target_locator`  = `{"path": <field key>, "language": <iso2>}` (field; `language` optional) | `{"channel": <idx or "">}`
                       (document)
 - `proposed_value`  = `{"text"}` (text path / text attribute) | `{"option"}` / `{"options"}` (select attributes)
-                    | the document `{language, title, slug, body_markdown, meta, faq}` (document)
+                    | the document `{language, title, slug, body_markdown, meta, faq, cover?}` (document)
 - `current_snapshot`= the same shape as the value, read raw from the draft; `{}` for a document
 
 Field keys are paths (`content_path_service`) or `attributes.<slug>` (`content_attribute_service`). A draft has one
 language: a locator that names another one is refused (`ValueError`) by `read_current` / `apply` / `revert`, so a
 multi-language `write` run cannot put one language's text on a draft of another; `subject_languages` lets the
 bus skip those languages before any AI call. A document `apply` returns `{"subject_ref": <new uid>}`; its `revert`
-deletes that draft (`proposal.result_ref`) only while it was never published.
+deletes that draft (`proposal.result_ref`) only while it was never published. A document proposal with a staged
+picture carries its cover (`cover: {alt, file_name}`): a new gallery image, the blog tile's image and the `og_image`;
+`revert` deletes it with the draft.
 
 Gallery images (`subject_ref` = `image:<uid>`) are the source and the target of the `image` kind
 (`media_enrichment_service`): `list_pictures` / `picture` give the image itself, a `picture` proposal (locator
@@ -96,7 +98,9 @@ def apply(proposal) -> dict | None:
     if proposal.target_kind == PICTURE_KIND:
         return media_enrichment_service.apply_derived(proposal)
     if proposal.target_kind == DOCUMENT_KIND:
-        draft = document_service.create_draft(proposal.proposed_value, channel=_channel(proposal))
+        draft = document_service.create_draft(
+            proposal.proposed_value, channel=_channel(proposal), cover=_cover(proposal)
+        )
         _log(proposal, draft.content, Action.CREATE)
         return {"subject_ref": str(draft.content.uid)}
     _write(proposal, proposal.proposed_value)
@@ -121,7 +125,18 @@ def revert(proposal) -> None:
     if draft is None:
         return
     _log(proposal, draft.content, Action.DELETE)
+    cover = (draft.content.extension or {}).get("images_set") if (proposal.proposed_value or {}).get("cover") else None
     document_service.delete_draft(draft)
+    if cover:
+        media_enrichment_service.delete_cover(cover)
+
+
+def _cover(proposal) -> dict | None:
+    """The `images_set` of the document's staged cover (made a gallery image now); None without one."""
+    if not getattr(proposal, "staged_file", ""):
+        return None
+    image = media_enrichment_service.add_cover(proposal, (proposal.proposed_value or {}).get("cover") or {})
+    return media_enrichment_service.images_set(image)
 
 
 def _write(proposal, value: dict) -> None:

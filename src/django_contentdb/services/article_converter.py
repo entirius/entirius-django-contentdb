@@ -5,7 +5,8 @@
 """Article markdown + meta → blog-post payload (pure functions, no ORM, no network).
 
 Blog model: a flat list of sections (`section-text`, `section-faq`), no tiles. Markdown images are dropped (the MVP
-has no image pipeline), but an image still ends the text section before it, as in the original converter. The payload has the shape the v1 draft API accepts: `name`, `language`, `routes`, `meta`,
+has no image pipeline), but an image still ends the text section before it, as in the original converter. A cover
+(an `images_set`) goes to the blog tile (`extension.images_set`) and its desktop image to `meta.og_image`. The payload has the shape the v1 draft API accepts: `name`, `language`, `routes`, `meta`,
 `extension`, `content`.
 """
 
@@ -196,9 +197,9 @@ def first_paragraph(body: list[dict]) -> str:
     return (text[:157] + "…") if len(text) > 158 else text
 
 
-def build_payload(md: str, meta: dict, *, slug: str) -> dict:
+def build_payload(md: str, meta: dict, *, slug: str, cover: dict | None = None) -> dict:
     """Full blog-post payload. `meta` keys: `lang`, `title`, `seo_title`, `seo_description`, `og_title`,
-    `og_description` (all optional)."""
+    `og_description` (all optional); `cover` = the `images_set` (`{desktop, mobile}`) of the blog tile."""
     article = split_article(md)
     title = article["title"] or meta.get("title", "")
     seo_title = meta.get("seo_title") or title
@@ -215,13 +216,13 @@ def build_payload(md: str, meta: dict, *, slug: str) -> dict:
             "description": seo_description,
             "og_title": meta.get("og_title") or seo_title,
             "og_description": meta.get("og_description") or seo_description,
-            "og_image": "",
+            "og_image": ((cover or {}).get("desktop") or {}).get("image", ""),
         },
         "extension": {
             "reset": False,
             "title": title,
             "core_type": "tile-blog-extension",
-            "images_set": {},
+            "images_set": cover or {},
             "description": seo_description,
         },
         "content": _content(article, language),
