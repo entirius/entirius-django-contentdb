@@ -7,6 +7,7 @@
 Document value (contract A4 § 6, `compose`): `{language, title, slug, body_markdown, meta, faq}` where `meta` is
 `{title, description, og_title, og_description}` and `faq` is `[{question, answer}]` (answers in markdown). The
 payload comes from `article_converter.build_payload`; the route is the slug, suffixed `-2`, `-3`, … when taken.
+A `cover` (`images_set`) becomes the blog tile's image and the `og_image`.
 """
 
 from django.db import transaction
@@ -23,11 +24,11 @@ ROUTE_MAX_LENGTH = 256
 
 
 @transaction.atomic
-def create_draft(value: dict, *, channel: str = "") -> Draft:
-    """A new unpublished draft of the document content type, built from the document `value`."""
+def create_draft(value: dict, *, channel: str = "", cover: dict | None = None) -> Draft:
+    """A new unpublished draft of the document content type, built from the document `value` (and its cover)."""
     content_type = _document_type()
     language = _language(value.get("language", ""))
-    payload = article_converter.build_payload(_markdown(value), _converter_meta(value), slug="")
+    payload = article_converter.build_payload(_markdown(value), _converter_meta(value), slug="", cover=cover)
     content = Content.objects.create(
         content=sanitize_content(payload["content"]),
         meta=sanitize_content(payload["meta"]),

@@ -108,3 +108,10 @@ def test_description_falls_back_to_the_first_paragraph():
     payload = build_payload(md, {"lang": "en"}, slug="t")
     assert payload["meta"]["description"].endswith("…") and len(payload["meta"]["description"]) == 158
     assert payload["extension"]["description"] == payload["meta"]["description"]
+
+
+def test_a_cover_fills_the_blog_tile_and_the_og_image():
+    image = {"uid": "u1", "image": "/media/image/c.png", "set": [], "meta": {"alt": "A"}, "width": 2, "height": 1}
+    payload = build_payload("# Title\n\nBody.", {"lang": "en"}, slug="t", cover={"desktop": image, "mobile": image})
+    assert payload["extension"]["images_set"]["desktop"]["uid"] == "u1"
+    assert payload["meta"]["og_image"] == "/media/image/c.png"
