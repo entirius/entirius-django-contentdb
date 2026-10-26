@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 5.3.0rc2 — 2026-10-26
 
 - Enrichment: a `document` proposal with a staged picture carries its cover (`cover: {alt, file_name}`): Apply adds it
   to the gallery (tag `ai`), puts it in the blog tile (`extension.images_set`, desktop and mobile) and sets
