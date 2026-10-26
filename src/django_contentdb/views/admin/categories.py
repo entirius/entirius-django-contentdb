@@ -25,6 +25,7 @@ class CategoryViewSet(ModelViewSet):
     pagination_class = StandardPagination
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated & (IsAdminUser | ContentTypePermission)]
+    access_area = "content.pages"
     lookup_field = "uid"
 
     def get_queryset(self):

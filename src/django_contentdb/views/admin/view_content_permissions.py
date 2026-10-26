@@ -39,3 +39,6 @@ def view_content_permissions(request, *args, **kwargs):
 
     res_body = {"meta": {"status": "OK", "message": ""}, "data": values}
     return Response(res_body)
+
+
+view_content_permissions.access_area = "staff.baseline"

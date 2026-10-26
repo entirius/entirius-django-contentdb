@@ -1,5 +1,47 @@
 # Changelog
 
+## Unreleased
+
+- Enrichment: a `document` proposal with a staged picture carries its cover (`cover: {alt, file_name}`): Apply adds it
+  to the gallery (tag `ai`), puts it in the blog tile (`extension.images_set`, desktop and mobile) and sets
+  `meta.og_image`; undo deletes the image with the draft. `article_converter.build_payload(cover=...)`.
+
+## 5.3.0rc1 — 2026-10-16
+- Enrichment: gallery images are subjects of the adapter (`image:<uid>`) — the source picture of the AI image kind
+  (`list_pictures`, `picture`, `subject_labels`, a named `build_context`) and the target of its results: Apply adds a
+  new image tagged `ai` ("<original> · packshot", linked to the original in `meta.source_image`) or replaces the
+  original's file (`apply_modes`); undo deletes the added image or restores the old file. No video (the gallery
+  stores images only). See `docs/enrichment-adapter.md` § Gallery images.
+- Fix: `optimize_image` saved the thumbnail from a raw file object and failed (logged, no thumbnail); it now wraps it
+  in a Django `File`, so uploads get their optimised thumbnail again.
+- Enrichment adapter (`services/enrichment_adapter.py`, registered by the host as
+  `ENRICHMENT_ADAPTERS["contentdb"]`): the enrichment bus reads and writes draft fields by path (`name`, `meta.*`,
+  `extension.*`, section and tile texts) and content-type attributes (select, multiselect, text), with merge writes,
+  sanitising and an `ActivityLog` row as the reviewer. A `document` proposal creates an unpublished blog-post draft
+  from article markdown (a port of the article converter) and returns its uid; undo deletes it while never
+  published nor edited. Text writes take strings only and an unknown `filter` key raises `ValueError`. New setting `CONTENTDB_ENRICHMENT_DOCUMENT_TYPE` (default `blog-post`). See `docs/enrichment-adapter.md`.
+
+## 5.2.0 — 2026-10-12
+
+- Access: the module declares its own access areas on its AppConfig and its admin views (copied from the
+  entirius-django-access defaults; behaviour unchanged).
+
+### Security
+
+- The router roots of the v1 public and admin APIs (an index of route names) declare `authentication_classes = []`
+  and `AllowAny`. They inherited the service default, so under DRF's defaults (session and Basic) the root answered
+  differently for a right and a wrong password sent as `Authorization: Basic`. The admin root carries the access area
+  `content.pages` itself (it was mapped by an access default for the framework's root view), so under the access gate
+  it answers as before. The views behind both roots are unchanged.
+
+- Page HTML is sanitised on write. Creating a draft, updating it and publishing it pass `content` and `extension`
+  through an allowlist (`services/content_service.py`): every string of the JSON that carries markup keeps only the
+  tags, attributes, URL schemes (`http`, `https`, `mailto`; images `http`, `https`) and style properties the CMS
+  editor writes; `script` and `style` elements go with their content, event handlers and `javascript:` / `data:`
+  URLs are dropped. Before, rich-text props were stored as sent and rendered as HTML by the CMS and the storefront,
+  so an account allowed to save content could store a script. Content stored earlier is not rewritten: it is
+  sanitised the next time it is saved or published.
+
 ## 5.1.0 — 2026-08-11
 
 - v1 Admin API authenticates with `JWTAuthentication` (djangorestframework-simplejwt)
