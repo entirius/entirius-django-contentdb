@@ -1,0 +1,56 @@
+{
+ "name": "How Orbital Foundry keeps product data ready for automation",
+ "language": "PL",
+ "meta": {
+  "index": "Index",
+  "follow": "Follow",
+  "title": "Product data ready for automation",
+  "description": "Clean product data is the cheapest automation you will ever buy. Orbital Foundry learned it the hard way.",
+  "og_title": "Product data ready for automation",
+  "og_description": "Clean product data is the cheapest automation you will ever buy. Orbital Foundry learned it the hard way.",
+  "og_image": ""
+ },
+ "extension": {
+  "reset": false,
+  "title": "How Orbital Foundry keeps product data ready for automation",
+  "core_type": "tile-blog-extension",
+  "images_set": {},
+  "description": "Clean product data is the cheapest automation you will ever buy. Orbital Foundry learned it the hard way."
+ },
+ "content": {
+  "document_configs": {},
+  "sections": [
+   {
+    "core_type": "section-text",
+    "title": null,
+    "description": "<p>Clean product data is the cheapest <strong>automation</strong> you will ever buy. Orbital Foundry learned it the <em>hard</em> way.</p><h2>Start with an attribute audit</h2><p></p><p>Count the attributes that are empty, duplicated or written in three different units. See the <a href=\"https://example.com/audit\">audit guide</a> and the <code>attribute_set</code> field.</p><ul><li><p>completeness per category</p></li><li><p>consistency of units</p></li><li><p>one owner per attribute</p></li></ul><p></p><h2>Agree on one source of truth</h2><p></p><table><thead><tr><th>Area</th><th>Owner</th><th>Review</th></tr></thead><tbody><tr><td>Attributes</td><td>Catalogue team</td><td>weekly</td></tr><tr><td>Descriptions</td><td>Content team</td><td>monthly</td></tr></tbody></table><p></p><h3>Keep the review short</h3><p></p><p>A fifteen-minute review beats a quarterly clean-up.</p>"
+   },
+   {
+    "core_type": "section-text",
+    "title": null,
+    "description": "<h2>Automate the boring parts</h2><p></p><p>Only automate a step that is measurable, repeatable and fed with structured data.</p>"
+   },
+   {
+    "core_type": "section-faq",
+    "title": "Na jakie pytania znajdziesz odpowiedź w tym artykule?",
+    "faq_items": [
+     {
+      "question": "Where should we start?",
+      "answer": "<p>With an audit of completeness and consistency.</p>"
+     },
+     {
+      "question": "Will automation fix bad data?",
+      "answer": "<p>No. Clean the data first, then automate.</p><ul><li><p>it scales whatever it is given</p></li></ul>"
+     }
+    ]
+   }
+  ],
+  "sections_order": [
+   0,
+   1,
+   2
+  ],
+  "tiles": {},
+  "tiles_order": {}
+ }
+}

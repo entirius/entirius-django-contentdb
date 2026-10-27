@@ -1,0 +1,46 @@
+{
+ "name": "Short note",
+ "language": "PL",
+ "meta": {
+  "index": "Index",
+  "follow": "Follow",
+  "title": "Short note",
+  "description": "A short note.",
+  "og_title": "Short",
+  "og_description": "A short note.",
+  "og_image": ""
+ },
+ "extension": {
+  "reset": false,
+  "title": "Short note",
+  "core_type": "tile-blog-extension",
+  "images_set": {},
+  "description": "A short note."
+ },
+ "content": {
+  "document_configs": {},
+  "sections": [
+   {
+    "core_type": "section-text",
+    "title": null,
+    "description": "<p>Intro paragraph with a <a href=\"https://example.com\">link</a>.</p>"
+   },
+   {
+    "core_type": "section-faq",
+    "title": "Na jakie pytania znajdziesz odpowiedź w tym artykule?",
+    "faq_items": [
+     {
+      "question": "Is this short?",
+      "answer": "<p>Yes.</p>"
+     }
+    ]
+   }
+  ],
+  "sections_order": [
+   0,
+   1
+  ],
+  "tiles": {},
+  "tiles_order": {}
+ }
+}
