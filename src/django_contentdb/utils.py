@@ -41,11 +41,13 @@ def standard_exception_handler(exc, context):
         else:
             status = "ERR"
 
-        response = Response(
-            data={"meta": {"status": status, "status_code": code, "message": exc.get_codes()}, "data": handled.data},
-            status=handled.status_code,
-            exception=True,
-        )
+        # Reuse DRF's response: its status and headers (WWW-Authenticate, Retry-After) stand, only the body changes.
+        handled.data = {
+            "meta": {"status": status, "status_code": code, "message": exc.get_codes()},
+            "data": handled.data,
+        }
+        handled.exception = True
+        response = handled
     else:
         logger.exception(exc)
         status = "UNHANDLED EXCEPTION"

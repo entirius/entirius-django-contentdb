@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- `standard_exception_handler` (the v1 envelope, a service's `v1_handler`) keeps the headers DRF's handler sets: a 401
+  carries `WWW-Authenticate` again (the first authenticator's `authenticate_header`) and a 429 from
+  `Throttled(wait=...)` carries `Retry-After` (whole seconds, rounded up; DRF sets none for a wait of 0). Before, the
+  envelope was a new response without them. Status codes stay DRF's, including the 403 it answers when the first
+  authenticator has no `authenticate_header`.
+
 ## 5.3.0 — 2026-10-27
 
 - Enrichment: a `document` proposal with a staged picture carries its cover (`cover: {alt, file_name}`): Apply adds it
