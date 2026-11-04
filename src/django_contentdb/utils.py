@@ -10,7 +10,7 @@ import tempfile
 from math import ceil
 
 import image_transformations
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
@@ -28,11 +28,12 @@ logger = logging.getLogger(__name__)
 
 
 def standard_exception_handler(exc, context):
-    # As DRF does: Django's own exceptions carry no get_codes() (an Http404 from get_object() was a 500).
+    # Django's own exceptions carry no get_codes() (an Http404 from get_object() was a 500). DRF's generic
+    # detail, not the Django message: that text is written for logs ("No Language matches the given query.").
     if isinstance(exc, Http404):
-        exc = exceptions.NotFound(*exc.args)
-    elif isinstance(exc, PermissionDenied):
-        exc = exceptions.PermissionDenied(*exc.args)
+        exc = exceptions.NotFound()
+    elif isinstance(exc, DjangoPermissionDenied):
+        exc = exceptions.PermissionDenied()
 
     handled = exception_handler(exc, context)
 

@@ -10,8 +10,9 @@
   envelope was a new response without them. Status codes stay DRF's, including the 403 it answers when the first
   authenticator has no `authenticate_header`.
 - `standard_exception_handler`: Django's `Http404` (raised by `get_object()` / `get_object_or_404` on a missing row)
-  answers 404 `NOT_FOUND` and Django's `PermissionDenied` 403 `FORBIDDEN`; before, the handler called `get_codes()` on
-  them and crashed, so every v1 retrieve of a missing row was a 500.
+  answers 404 `NOT_FOUND` and Django's `PermissionDenied` 403 `FORBIDDEN`, with DRF's generic detail ("Not found.")
+  rather than the Django message; before, the handler called `get_codes()` on them and crashed, so every v1 retrieve
+  of a missing row was a 500.
 
 ## 5.3.0 — 2026-10-27
 

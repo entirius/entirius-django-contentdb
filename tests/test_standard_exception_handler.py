@@ -4,8 +4,10 @@
 
 """standard_exception_handler (the v1 envelope) keeps the status and headers DRF's handler sets."""
 
+import pytest
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
+from django.shortcuts import get_object_or_404
 from rest_framework.authentication import BasicAuthentication, SessionAuthentication
 from rest_framework.exceptions import Throttled, ValidationError
 from rest_framework.permissions import IsAuthenticated
@@ -15,6 +17,7 @@ from rest_framework.throttling import BaseThrottle
 from rest_framework.views import APIView
 from rest_framework.views import exception_handler as drf_exception_handler
 
+from django_contentdb.models import Language
 from django_contentdb.utils import standard_exception_handler
 
 V1_PATH = "/api/contentdb/v1/x/"
@@ -37,6 +40,14 @@ class _SessionAuthView(_BasicAuthView):
     """First authenticator has no authenticate_header: DRF turns the 401 into a 403."""
 
     authentication_classes = [SessionAuthentication]
+
+
+class _LanguageView(_BasicAuthView):
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request):
+        return Response({"iso2": get_object_or_404(Language, iso2="zz").iso2})
 
 
 class _SlowDown(BaseThrottle):
@@ -109,13 +120,21 @@ def test_validation_error_adds_no_headers():
     assert set(response.headers) == set(Response().headers)
 
 
-def test_django_http404_is_a_404():
+@pytest.mark.django_db
+def test_missing_row_is_a_404():
     """get_object() and get_object_or_404 raise Django's Http404, which has no get_codes()."""
-    response = _handle(Http404("No Language matches the given query."))
+    response = _get(_LanguageView)
 
     assert response.status_code == 404
     assert response.data["meta"] == {"status": "NOT_FOUND", "status_code": 404, "message": "not_found"}
-    assert response.data["data"] == {"detail": "No Language matches the given query."}
+    assert response.data["data"] == {"detail": "Not found."}
+
+
+def test_django_http404_message_stays_out_of_the_body():
+    response = _handle(Http404("No Draft matches the given query."))
+
+    assert response.status_code == 404
+    assert "Draft" not in str(response.data)
 
 
 def test_django_permission_denied_is_a_403():
