@@ -10,11 +10,14 @@ import tempfile
 from math import ceil
 
 import image_transformations
+from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.db.models.fields.files import ImageField, ImageFieldFile
+from django.http import Http404
 from PIL import Image
+from rest_framework import exceptions
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
@@ -25,6 +28,12 @@ logger = logging.getLogger(__name__)
 
 
 def standard_exception_handler(exc, context):
+    # Django's own exceptions carry no get_codes() (an Http404 from get_object() was a 500). DRF's generic
+    # detail, not the Django message: that text is written for logs ("No Language matches the given query.").
+    if isinstance(exc, Http404):
+        exc = exceptions.NotFound()
+    elif isinstance(exc, DjangoPermissionDenied):
+        exc = exceptions.PermissionDenied()
 
     handled = exception_handler(exc, context)
 
@@ -41,11 +50,13 @@ def standard_exception_handler(exc, context):
         else:
             status = "ERR"
 
-        response = Response(
-            data={"meta": {"status": status, "status_code": code, "message": exc.get_codes()}, "data": handled.data},
-            status=handled.status_code,
-            exception=True,
-        )
+        # Reuse DRF's response: its status and headers (WWW-Authenticate, Retry-After) stand, only the body changes.
+        handled.data = {
+            "meta": {"status": status, "status_code": code, "message": exc.get_codes()},
+            "data": handled.data,
+        }
+        handled.exception = True
+        response = handled
     else:
         logger.exception(exc)
         status = "UNHANDLED EXCEPTION"

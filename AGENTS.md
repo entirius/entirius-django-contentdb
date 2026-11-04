@@ -158,7 +158,8 @@ Layer rule: v1 views use DRF serializers directly (no service layer for CRUD). v
 - DRF serializers (not Pydantic) — no drf-spectacular, no OpenAPI auto-generation
 - `HashedImageField` uses SHA256 of content for path — same image uploaded twice = same file on disk
 - `ContentTypePermission` checks `content_type` slug from URL kwargs — requires content_type in URL path
-- `standard_exception_handler` wraps ALL errors in `{"meta": {...}, "data": ...}` format
+- `standard_exception_handler` wraps ALL errors in `{"meta": {...}, "data": ...}` format; it replaces the body of DRF's
+  response, so DRF's status and headers (`WWW-Authenticate`, `Retry-After`) stay
 - Layout extender routes are separate from content routes — `is_layout_extender=True` ContentTypes use `layout-extender/*` paths
 - Author cannot appear in both `authors` and `co_authors` M2M on the same Draft — validated in service layer and API
 - Both API versions authenticate with simplejwt `JWTAuthentication` — the module reads the Bearer token itself and never relies on the service's `AUTHENTICATION_BACKENDS` (v1 did until 5.1.0, which made admin auth silently deployment-dependent)
