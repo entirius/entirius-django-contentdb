@@ -4,6 +4,8 @@
 
 """standard_exception_handler (the v1 envelope) keeps the status and headers DRF's handler sets."""
 
+from django.core.exceptions import PermissionDenied
+from django.http import Http404
 from rest_framework.authentication import BasicAuthentication, SessionAuthentication
 from rest_framework.exceptions import Throttled, ValidationError
 from rest_framework.permissions import IsAuthenticated
@@ -105,3 +107,20 @@ def test_validation_error_adds_no_headers():
     assert response.status_code == 400
     assert response.data["data"] == {"url": ["This field is required."]}
     assert set(response.headers) == set(Response().headers)
+
+
+def test_django_http404_is_a_404():
+    """get_object() and get_object_or_404 raise Django's Http404, which has no get_codes()."""
+    response = _handle(Http404("No Language matches the given query."))
+
+    assert response.status_code == 404
+    assert response.data["meta"] == {"status": "NOT_FOUND", "status_code": 404, "message": "not_found"}
+    assert response.data["data"] == {"detail": "No Language matches the given query."}
+
+
+def test_django_permission_denied_is_a_403():
+    response = _handle(PermissionDenied())
+
+    assert response.status_code == 403
+    assert response.data["meta"]["status"] == "FORBIDDEN"
+    assert response.data["meta"]["message"] == "permission_denied"

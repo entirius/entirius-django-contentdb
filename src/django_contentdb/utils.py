@@ -10,11 +10,14 @@ import tempfile
 from math import ceil
 
 import image_transformations
+from django.core.exceptions import PermissionDenied
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.db.models.fields.files import ImageField, ImageFieldFile
+from django.http import Http404
 from PIL import Image
+from rest_framework import exceptions
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
@@ -25,6 +28,11 @@ logger = logging.getLogger(__name__)
 
 
 def standard_exception_handler(exc, context):
+    # As DRF does: Django's own exceptions carry no get_codes() (an Http404 from get_object() was a 500).
+    if isinstance(exc, Http404):
+        exc = exceptions.NotFound(*exc.args)
+    elif isinstance(exc, PermissionDenied):
+        exc = exceptions.PermissionDenied(*exc.args)
 
     handled = exception_handler(exc, context)
 
