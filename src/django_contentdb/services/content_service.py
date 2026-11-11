@@ -28,7 +28,7 @@ _ALLOWED_ATTRS = frozenset(
     "href target rel src alt title width height style colspan rowspan colwidth data-color data-faq-tooltip".split()
 )
 # A URL attribute keeps a value without a scheme (a path, an anchor) or with one of these.
-_URL_SCHEMES = {"href": frozenset({"http", "https", "mailto"}), "src": frozenset({"http", "https"})}
+_URL_SCHEMES = {"href": frozenset({"http", "https", "mailto", "tel"}), "src": frozenset({"http", "https"})}
 _SCHEME_RE = re.compile(r"^([a-z][a-z0-9+.-]*):")
 # Browsers drop control characters and whitespace before they read the scheme ("java\tscript:").
 _URL_NOISE_RE = re.compile(r"[\x00-\x20\x7f-\x9f]")

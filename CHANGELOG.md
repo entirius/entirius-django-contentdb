@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Sanitiser: a phone link (`href="tel:..."`) in page HTML is kept. Before, `tel` was not among the allowed link
+  schemes (`http`, `https`, `mailto`), so the link lost its `href` on save. Images still take `http` and `https` only.
+
 ## 5.3.1 — 2026-11-04
 
 ### Fixed
