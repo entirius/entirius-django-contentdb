@@ -72,6 +72,13 @@ def test_dangerous_markup_is_removed(dirty, clean):
     assert sanitize_html(dirty) == (clean if clean is not None else expected[dirty])
 
 
+def test_phone_links_are_kept_only_in_href():
+    link = '<a href="tel:+48123456789">+48 123 456 789</a>'
+    assert sanitize_html(link) == link
+    assert sanitize_html('<img src="tel:+48123456789">') == "<img>"
+    assert sanitize_html('<a href="javascript:alert(1)">a</a>') == "<a>a</a>"
+
+
 @pytest.mark.parametrize("html", [EDITOR_HTML, '<p onclick="x">a &amp; b<script>1</script></p>', "a < b"])
 def test_sanitising_is_idempotent(html):
     once = sanitize_html(html)
