@@ -72,17 +72,28 @@ class ImageManager:
 
     @staticmethod
     def resize_fill_crop(image: ImageClass, out_x: int, out_y: int) -> ImageClass:
-        resize_option = Image.ANTIALIAS
+        resize_option = Image.Resampling.LANCZOS
+
+        if image.mode not in ("RGB", "RGBA"):
+            image = image.convert("RGBA" if image.has_transparency_data else "RGB")
 
         if image.width > out_x and image.height > out_y:
             result = ImageOps.fit(image, (out_x, out_y), resize_option, centering=(0.5, 0.5))
-        elif image.width < out_x and image.height > out_y:
-            result = ImageOps.fit(image, (image.width, out_y), resize_option, centering=(0.5, 0.5)).pad(
-                image, (out_x, out_y), resize_option, color=(255, 255, 255), centering=(0.5, 0.5)
+        elif image.width <= out_x and image.height > out_y:
+            result = ImageOps.pad(
+                ImageOps.fit(image, (image.width, out_y), resize_option, centering=(0.5, 0.5)),
+                (out_x, out_y),
+                resize_option,
+                color=(255, 255, 255),
+                centering=(0.5, 0.5),
             )
-        elif image.width > out_x and image.height < out_y:
-            result = ImageOps.fit(image, (out_x, image.height), resize_option, centering=(0.5, 0.5)).pad(
-                image, (out_x, out_y), resize_option, color=(255, 255, 255), centering=(0.5, 0.5)
+        elif image.width > out_x and image.height <= out_y:
+            result = ImageOps.pad(
+                ImageOps.fit(image, (out_x, image.height), resize_option, centering=(0.5, 0.5)),
+                (out_x, out_y),
+                resize_option,
+                color=(255, 255, 255),
+                centering=(0.5, 0.5),
             )
         else:
             result = ImageOps.pad(image, (out_x, out_y), resize_option, color=(255, 255, 255), centering=(0.5, 0.5))
