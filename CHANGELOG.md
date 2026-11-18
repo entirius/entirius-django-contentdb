@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Security
+
+- Require `Pillow>=13.0.0` (fixes known Pillow CVEs; Pillow 13 requires Python 3.11+).
+
+### Fixed
+
+- `ImageManager.resize_fill_crop` uses `Image.Resampling.LANCZOS` instead of `Image.ANTIALIAS`, removed in Pillow 10
+  (the same filter).
+- `ImageManager.resize_fill_crop` crops and pads an image that is larger than the target in one dimension and
+  smaller in the other (it called a non-existent `Image.pad` and raised `AttributeError`).
+
 ## 5.3.2 — 2026-11-11
 
 ### Fixed
